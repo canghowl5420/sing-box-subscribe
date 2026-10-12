@@ -199,16 +199,16 @@ def config(url):
 
     # 构建要删除的字符串列表
     params_to_remove = [
-        f'&prefix={quote(pre_param)}',
+        f'&prefix={pre_param.replace(",", "%2C")}',
         f'&ua={ua_param.replace(",", "%2C")}',
         f'&UA={UA_param.replace(",", "%2C")}',
         f'&file={file_param}',
         f'file={file_param}',
-        f'&emoji={emoji_param}',
+        f'&emoji={emoji_param.replace(",", "%2C")}',
         f'&tag={tag_param.replace(",", "%2C")}',
         f'&gh={gh_proxy_param}',
-        f'&eps={quote(eps_param)}',
-        f'&enn={quote(enn_param)}'
+        f'&eps={eps_param.replace(",", "%2C")}',
+        f'&enn={enn_param.replace(",", "%2C")}'
     ]
     # 从url中删除这些字符串
     full_url = full_url.replace(',', '%2C')
@@ -223,15 +223,18 @@ def config(url):
         parts = full_url.split('/api/v4/projects/')
         full_url = parts[0] + '/api/v4/projects/' + parts[1].replace('/', '%2F', 1)
     print (full_url)
-    # 多订阅：tag / ua / prefix 支持“逗号分隔的列表”，按订阅顺序一一对应
-    #   例：&tag=机场A,机场B,机场C&ua=clashmeta,v2rayng,sing-box&prefix=A-,B-,C-
-    #   未提供或对应位置为空时，保持默认（tag_1/tag_2/tag_3、clash.meta、无前缀）
-    def _param_list(value):
-        return [item.strip() for item in unquote(value).split(',')] if value else []
-
-    tag_list = _param_list(tag_param)
-    ua_list = _param_list(ua_param or UA_param)
-    prefix_list = _param_list(pre_param)
+    # 多订阅：以下参数既可“单值（对所有订阅生效）”，也可“逗号分隔列表（按订阅顺序一一对应）”
+    #   tag / ua(UA) / prefix / emoji / enn(ex-node-name)
+    #   列表里留空（如 tag=A,,C）表示该位保持默认；列表比订阅短时，剩余保持默认
+    def _resolve(value, index):
+        if value is None or value == '':
+            return None
+        if ',' in value:
+            items = [i.strip() for i in unquote(value).split(',')]
+            if index < len(items) and items[index] != '':
+                return items[index]
+            return None
+        return unquote(value).strip()
 
     base_url = full_url.split('url=', 1)[-1] if full_url.startswith('url') else full_url
     url_parts = base_url.split('|')
@@ -241,14 +244,21 @@ def config(url):
             item = subscribe_list[index]
             item['url'] = url_parts[index]
             item['enabled'] = True
-            item['ex-node-name'] = enn_param
-            # 每个订阅可单独指定 tag / prefix / User-Agent
-            if index < len(tag_list) and tag_list[index]:
-                item['tag'] = tag_list[index]
-            if index < len(prefix_list) and prefix_list[index]:
-                item['prefix'] = prefix_list[index]
-            if index < len(ua_list) and ua_list[index]:
-                item['User-Agent'] = ua_list[index]
+            tag_value = _resolve(tag_param, index)
+            prefix_value = _resolve(pre_param, index)
+            ua_value = _resolve(ua_param or UA_param, index)
+            enn_value = _resolve(enn_param, index)
+            emoji_value = _resolve(emoji_param, index)
+            if tag_value is not None:
+                item['tag'] = tag_value
+            if prefix_value is not None:
+                item['prefix'] = prefix_value
+            if ua_value is not None:
+                item['User-Agent'] = ua_value
+            if enn_value is not None:
+                item['ex-node-name'] = enn_value
+            if emoji_value is not None:
+                item['emoji'] = int(emoji_value) if emoji_value.isdigit() else item.get('emoji', '')
     if len(url_parts) == 1:
         subscribe['url'] = full_url.split('url=', 1)[-1] if full_url.startswith('url') else full_url
         subscribe['emoji'] = int(emoji_param) if emoji_param.isdigit() else subscribe.get('emoji', '')

@@ -40,21 +40,30 @@ Use `|` to connect the two sub links and then [URL encode](https://www.urlencode
 
 Example: https://sing-box-subscribe.vercel.app/config/https%3A%2F%2Fgist.githubusercontent.com%2FToperlock%2Fb1ca381c32820e8c79669cbbd85b68ac%2Fraw%2Fdafae92fbe48ff36dae6e5172caa1cfd7914cda4%2Fgistfile1.txt%7Chttps%3A%2F%2Fgist.githubusercontent.com%2FToperlock%2Ffa2fdc5f827ff7d288c23d568db75412%2Fraw%2F6c3b725da347f57b0021b806dfca5f51e1660746%2F1.yaml
 
-### 2026.10 Update (fork): Multiple subscriptions can set their own `tag` / `ua` / `prefix` individually
+### 2026.10 Update (fork): Multi-subscription — every single-subscription parameter is now per-subscription
 
-When multiple subscription links are connected with `|`, the `tag`, `ua` and `prefix` parameters now accept **comma-separated lists**, which are matched to the subscriptions **by order**:
+When multiple subscription links are connected with `|`, **all** the parameters that used to work only for a single subscription (`tag`, `ua`/`UA`, `prefix`, `emoji`, `enn`) can now be either:
 
-`/config/URL_LINK_1|URL_LINK_2|URL_LINK_3&tag=airportA,airportB,airportC&ua=clashmeta,v2rayng,sing-box&prefix=A-,B-,C-&file=https://xxxxxxxxx.json`
+- a **single value** -> applied to **all** subscriptions, or
+- a **comma-separated list** -> matched to the subscriptions **by order**.
 
-- `tag` list -> each subscription's tag (used by the config template as `{airportA}` ...). Defaults to `tag_1` / `tag_2` / `tag_3`.
-- `ua` list -> the `User-Agent` used to fetch each subscription. Defaults to `clash.meta` (`UA` is accepted as an alias).
-- `prefix` list -> each subscription's node-name prefix. Defaults to no prefix.
-- Leave a position empty (e.g. `tag=A,,C`) to keep the default for that subscription; if the list is shorter than the number of subscriptions, the remaining ones keep the default.
-- Values may be raw commas or URL-encoded (`%2C`); both work.
+`/config/URL_LINK_1|URL_LINK_2|URL_LINK_3&tag=airportA,airportB,airportC&ua=clashmeta,v2rayng,sing-box&prefix=A-,B-,C-&emoji=1,0,1&enn=网站,过期,剩余&file=https://xxxxxxxxx.json`
+
+| Parameter | Meaning | Default |
+|---|---|---|
+| `tag` | Subscription tag (used by the template as `{airportA}` ...) | `tag_1` / `tag_2` / `tag_3` |
+| `ua` / `UA` | `User-Agent` used to fetch the subscription | `clash.meta` |
+| `prefix` | Node-name prefix for that subscription | none |
+| `emoji` | `1`/`0` whether to add the country-flag emoji | `1` |
+| `enn` | `ex-node-name`: keywords of nodes to filter out | none |
+
+- A list may be written with raw commas or URL-encoded `%2C`; both work.
+- Leave a position empty (e.g. `tag=A,,C`) to keep the default for that subscription; if a list is shorter than the number of subscriptions, the remaining ones keep the default.
+- Passing a single value applies it to **all** subscriptions (e.g. `&emoji=0` disables the flag for all, `&ua=single-ua` uses it for all).
 
 Example:
 
-`/config/https://a.com/sub?token=1|https://b.com/sub?token=2&tag=机场A,机场B&ua=clashmeta,v2rayng&prefix=[A] ,[B]&file=https://xxxxxxxxx.json`
+`/config/https://a.com/sub?token=1|https://b.com/sub?token=2&tag=机场A,机场B&ua=clashmeta,v2rayng&prefix=[A] ,[B]&emoji=1,0&enn=过期&file=https://xxxxxxxxx.json`
 
 ### 2023.11.10 Update: The `file` parameter can be simplified and written as a number `1`, `2` represents the use of the template serial number provided in the github repository
 
