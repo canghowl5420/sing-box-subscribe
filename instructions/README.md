@@ -40,6 +40,22 @@ Use `|` to connect the two sub links and then [URL encode](https://www.urlencode
 
 Example: https://sing-box-subscribe.vercel.app/config/https%3A%2F%2Fgist.githubusercontent.com%2FToperlock%2Fb1ca381c32820e8c79669cbbd85b68ac%2Fraw%2Fdafae92fbe48ff36dae6e5172caa1cfd7914cda4%2Fgistfile1.txt%7Chttps%3A%2F%2Fgist.githubusercontent.com%2FToperlock%2Ffa2fdc5f827ff7d288c23d568db75412%2Fraw%2F6c3b725da347f57b0021b806dfca5f51e1660746%2F1.yaml
 
+### 2026.10 Update (fork): Multiple subscriptions can set their own `tag` / `ua` / `prefix` individually
+
+When multiple subscription links are connected with `|`, the `tag`, `ua` and `prefix` parameters now accept **comma-separated lists**, which are matched to the subscriptions **by order**:
+
+`/config/URL_LINK_1|URL_LINK_2|URL_LINK_3&tag=airportA,airportB,airportC&ua=clashmeta,v2rayng,sing-box&prefix=A-,B-,C-&file=https://xxxxxxxxx.json`
+
+- `tag` list -> each subscription's tag (used by the config template as `{airportA}` ...). Defaults to `tag_1` / `tag_2` / `tag_3`.
+- `ua` list -> the `User-Agent` used to fetch each subscription. Defaults to `clash.meta` (`UA` is accepted as an alias).
+- `prefix` list -> each subscription's node-name prefix. Defaults to no prefix.
+- Leave a position empty (e.g. `tag=A,,C`) to keep the default for that subscription; if the list is shorter than the number of subscriptions, the remaining ones keep the default.
+- Values may be raw commas or URL-encoded (`%2C`); both work.
+
+Example:
+
+`/config/https://a.com/sub?token=1|https://b.com/sub?token=2&tag=机场A,机场B&ua=clashmeta,v2rayng&prefix=[A] ,[B]&file=https://xxxxxxxxx.json`
+
 ### 2023.11.10 Update: The `file` parameter can be simplified and written as a number `1`, `2` represents the use of the template serial number provided in the github repository
 
 Example: https://sing-box-subscribe.vercel.app/config/https://gist.githubusercontent.com/Toperlock/b1ca381c32820e8c79669cbbd85b68ac/raw/dafae92fbe48ff36dae6e5172caa1cfd7914cda4/gistfile1.txt&file=2
