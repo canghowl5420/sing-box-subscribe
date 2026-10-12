@@ -1,17 +1,21 @@
 #===============================================================================
 # GitHub Actions：上游同步 + 按需构建并推送 Docker 镜像到 GHCR
-#   放置位置：你 fork 仓库的 .github/workflows/sync-and-build.yml
-#   建议同时停用原仓库自带的 .github/workflows/sync.yml（避免两个同步任务打架）
+#   放置位置：.github/workflows/sync-and-build.yml
 #
-#   逻辑：每天（或手动）先把上游合并进你的 main；
-#         只有“真有新提交”时才构建镜像并推到 ghcr.io/<owner>/<repo>:latest
+#   - push（任意分支 / tag）：直接构建“被推送的那个提交”并推镜像（按分支名打 tag，latest 只在 main）
+#   - schedule / workflow_dispatch：先同步上游，只有“真有上游新提交”时才构建 main
+#
+#   建议停用上游自带的 .github/workflows/sync.yml，避免两个同步任务重复
 #===============================================================================
 
 name: Upstream Sync & Build
 
 on:
+  push:
+    branches: ['**']             # 推送任意分支都构建；只想 main 就写 [main]
+    tags: ['v*']
   schedule:
-    - cron: "0 0 * * *"          # 每天 00:00 UTC 同步
+    - cron: "0 0 * * *"          # 每天 00:00 UTC 同步上游
   workflow_dispatch:             # 支持手动触发
     inputs:
       force_build:
@@ -35,12 +39,12 @@ env:
 
 jobs:
   #--------------------------------------------------------------------------------
-  # 1) 同步上游
+  # 1) 同步上游（仅在定时/手动时执行；push 时跳过）
   #--------------------------------------------------------------------------------
   sync:
     name: Sync latest commits from upstream repo
     runs-on: ubuntu-latest
-    if: ${{ github.event.repository.fork }}
+    if: ${{ github.event_name != 'push' && github.event.repository.fork }}
     outputs:
       changed: ${{ steps.sync.outputs.has_new_commits }}   # true/false，传给 build
     steps:
@@ -66,29 +70,35 @@ jobs:
           exit 1
 
   #--------------------------------------------------------------------------------
-  # 2) 构建并推送（仅当真有新提交，或手动强制）
+  # 2) 构建并推送
+  #    触发条件：push（构建被推送的提交）｜ 同步到上游新提交 ｜ 手动强制
   #--------------------------------------------------------------------------------
   build:
     name: Build & push to GHCR
     needs: sync
-    if: ${{ needs.sync.outputs.changed == 'true' || inputs.force_build == true }}
+    if: ${{ always() && (github.event_name == 'push' || needs.sync.outputs.changed == 'true' || inputs.force_build == true) }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout latest synced code
+      - name: Checkout pushed commit
         uses: actions/checkout@v4
         with:
-          ref: ${{ env.TARGET_BRANCH }}   # 取同步后的最新 main（默认取的是触发时的旧 SHA）
+          ref: ${{ github.sha }}   # 构建“被推送的提交”，而不是写死的 main
           fetch-depth: 0
 
-      - name: Resolve image name / tags
+      - name: Compute image and tags
         id: vars
         run: |
-          echo "image=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"   # GHCR 要求全小写
-          echo "sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
-          echo "date=$(date -u +%Y%m%d)" >> "$GITHUB_OUTPUT"
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+          IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}"                       # GHCR 要求全小写
+          SHORT_SHA="$(git rev-parse --short HEAD)"
+          BRANCH_TAG="$(echo "${GITHUB_REF_NAME}" | tr '/' '-')"       # 分支名里的 / 换成 -（Docker tag 不允许 /）
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
+          {
+            echo "tags<<EOF"
+            echo "$IMAGE:$BRANCH_TAG"
+            echo "$IMAGE:sha-$SHORT_SHA"
+            if [ "${GITHUB_REF_NAME}" = "${TARGET_BRANCH}" ]; then echo "$IMAGE:latest"; fi
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Set up Buildx
         uses: docker/setup-buildx-action@v3
@@ -107,10 +117,7 @@ jobs:
           file: ./Dockerfile
           push: true
           platforms: ${{ env.PLATFORMS }}
-          tags: |
-            ${{ steps.vars.outputs.image }}:latest
-            ${{ steps.vars.outputs.image }}:sha-${{ steps.vars.outputs.sha }}
-            ${{ steps.vars.outputs.image }}:date-${{ steps.vars.outputs.date }}
+          tags: ${{ steps.vars.outputs.tags }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
