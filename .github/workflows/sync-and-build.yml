@@ -36,6 +36,8 @@ env:
   TARGET_BRANCH: main
   # ---- 构建目标平台：amd64 必留；要 arm64 写 "linux/amd64,linux/arm64"（走 QEMU，慢）----
   PLATFORMS: linux/amd64
+  # ---- 哪些 ref 构建时同时打 :latest（空格分隔，分支名原样写）。默认只有 main。----
+  LATEST_BRANCHES: "main feature/multi-sub-tag-ua"
 
 jobs:
   #--------------------------------------------------------------------------------
@@ -91,12 +93,17 @@ jobs:
           IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}"                       # GHCR 要求全小写
           SHORT_SHA="$(git rev-parse --short HEAD)"
           BRANCH_TAG="$(echo "${GITHUB_REF_NAME}" | tr '/' '-')"       # 分支名里的 / 换成 -（Docker tag 不允许 /）
+          DATE_TAG="$(date -u +%Y%m%d)"
           echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
           {
             echo "tags<<EOF"
             echo "$IMAGE:$BRANCH_TAG"
             echo "$IMAGE:sha-$SHORT_SHA"
-            if [ "${GITHUB_REF_NAME}" = "${TARGET_BRANCH}" ]; then echo "$IMAGE:latest"; fi
+            echo "$IMAGE:date-$DATE_TAG"
+            # LATEST_BRANCHES 里列出的 ref 才打 latest（默认 main）
+            case " $LATEST_BRANCHES " in
+              *" ${GITHUB_REF_NAME} "*) echo "$IMAGE:latest" ;;
+            esac
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
