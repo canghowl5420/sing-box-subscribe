@@ -177,13 +177,31 @@ def config(url):
         next_char_index = index_of_colon + 2
         if next_char_index < len(encoded_url) and encoded_url[next_char_index] != "/":
             encoded_url = encoded_url[:next_char_index-1] + "/" + encoded_url[next_char_index-1:]
-    if query_string:
-        full_url = f"{encoded_url}?{query_string}"
-    else:
-        if any(substring in encoded_url for substring in ['&emoji=', '&file=']):
-            full_url = f"{encoded_url.split('&')[0]}"
+    # --- fork 修复：多订阅时子订阅 URL 里含 & 也不会被截断/漏参数 ---
+    # 把 URL 按 & 分段：已知参数（emoji/tag/prefix/ua/UA/file/eps/enn/gh）归为参数，
+    # 其余片段原样拼回，得到真正的“订阅部分”。
+    KNOWN_PARAMS = ('emoji', 'tag', 'prefix', 'ua', 'UA', 'file', 'eps', 'enn', 'gh')
+    robust_args = {}
+    sub_segments = []
+    for segment in encoded_url.split('&'):
+        key = segment.split('=', 1)[0]
+        if key in KNOWN_PARAMS:
+            robust_args[key] = segment.split('=', 1)[1] if '=' in segment else ''
         else:
-            full_url = f"{encoded_url}"
+            sub_segments.append(segment)
+    if robust_args and not query_string:
+        request.args = robust_args
+        full_url = '&'.join(sub_segments)
+        if full_url.startswith('url='):
+            full_url = full_url.split('url=', 1)[1]
+    else:
+        if query_string:
+            full_url = f"{encoded_url}?{query_string}"
+        else:
+            if any(substring in encoded_url for substring in ['&emoji=', '&file=']):
+                full_url = f"{encoded_url.split('&')[0]}"
+            else:
+                full_url = f"{encoded_url}"
 
     #print (f"full_url: {full_url}")
 
