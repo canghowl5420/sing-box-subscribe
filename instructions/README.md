@@ -200,7 +200,7 @@ For Windows systems, it's recommended to add the commands to a batch program for
 
 Before using, make sure to edit the `providers.json` file and the `.json` template files in the `config_template` directory.
 
-A lazy configuration `config_template_groups_rule_set_tun` file is included, which allows filtering nodes based on different categories:
+Two templates are bundled in `config_template/`: `default.json` (used by default, for recent sing-box) and `sb-config-1.12.json` (for sing-box 1.12). `default.json` filters nodes into region groups:
 * Implement `Openai` routing rules
 * Implement `Youtube` routing rules
 * Implement `Google` routing rules

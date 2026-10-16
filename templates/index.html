@@ -1,191 +1,454 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <link rel="icon" href="https://raw.githubusercontent.com/Toperlock/sing-box-subscribe/main/public/favicon.ico" type="image/x-icon">
-    <title>生成sing-box配置</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+    <title>sing-box-subscribe · 配置生成器</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%230284c7'/%3E%3Cstop offset='.45' stop-color='%230891b2'/%3E%3Cstop offset='1' stop-color='%2365a30d'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='url(%23g)'/%3E%3Ctext x='16' y='22' font-family='system-ui,sans-serif' font-size='16' font-weight='700' fill='white' text-anchor='middle'%3ESB%3C/text%3E%3C/svg%3E">
     <style>
+        :root {
+            color-scheme: light dark;
+            --content-width: 1040px;
+            --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #eef2f7 48%, #e2e8f0 100%);
+            --bg-grid: #0f172a0e;
+            --bg-sheen: linear-gradient(115deg, transparent 0%, transparent 33%, #0ea5e91c 48%, #84cc1617 58%, transparent 73%, transparent 100%);
+            --surface: #ffffffd1;
+            --surface-strong: #fffffff0;
+            --surface-soft: #ffffff85;
+            --surface-border: #ffffffb3;
+            --inner-border: #0f172a17;
+            --control-bg: #ffffffb8;
+            --control-hover: #fffffff0;
+            --control-border: #1a202c24;
+            --text-primary: #1a202c;
+            --text-secondary: #4a5568;
+            --text-muted: #64748b;
+            --accent-gradient: linear-gradient(135deg, #0284c7 0%, #0891b2 45%, #65a30d 100%);
+            --accent-soft: #0284c71a;
+            --accent-blue: #0284c7;
+            --success: #059669;
+            --danger: #dc2626;
+            --shadow: 0 28px 70px #0f172a21;
+            --control-shadow: 0 12px 28px #1f26871f;
+            --focus-ring: #0ea5e952;
+        }
+        html.dark {
+            --bg-gradient: linear-gradient(135deg, #05070b 0%, #0d111a 46%, #111827 100%);
+            --bg-grid: #94a3b813;
+            --bg-sheen: linear-gradient(115deg, transparent 0%, transparent 31%, #22d3ee1f 47%, #84cc1614 58%, transparent 74%, transparent 100%);
+            --surface: #0f172ab8;
+            --surface-strong: #131c2df0;
+            --surface-soft: #ffffff0b;
+            --surface-border: #94a3b82e;
+            --inner-border: #ffffff16;
+            --control-bg: #141821b3;
+            --control-hover: #232a38e6;
+            --control-border: #ffffff29;
+            --text-primary: #f8fafc;
+            --text-secondary: #a0aec0;
+            --text-muted: #7f8ea3;
+            --accent-gradient: linear-gradient(135deg, #38bdf8 0%, #22d3ee 42%, #84cc16 100%);
+            --accent-soft: #38bdf81f;
+            --accent-blue: #38bdf8;
+            --success: #34d399;
+            --danger: #fb7185;
+            --shadow: 0 32px 80px #0000009e;
+            --control-shadow: 0 16px 34px #0000005c;
+            --focus-ring: #67e8f957;
+        }
+        * { box-sizing: border-box; }
+        html, body { min-height: 100%; }
         body {
-            display: flex;
-            flex-direction: column; /* 垂直排列 */
-            align-items: center; /* 水平居中对齐 */
-            max-width: 100%; /* 调整内容最大宽度 */
-            /* transform: scale(1.9);  将内容放大190% */
-            justify-content: center;
-            height: 100vh; /* 使内容在垂直方向上居中 */
-            margin: 0; /* 去掉默认的页面边距 */
-            font-family: Arial, sans-serif; /* 可选的字体 */
-            background-color: #f2f2f2;
+            margin: 0;
+            color: var(--text-primary);
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
         }
-        .container {
-            display: flex;
-            flex-direction: row; /* 水平排列 */
-            align-items: center; /* 水平居中对齐 */
+        body::before, body::after { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+        body::before {
+            background-image: linear-gradient(var(--bg-grid) 1px, transparent 1px),
+                              linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+            background-size: 36px 36px;
+            opacity: .58;
+            -webkit-mask-image: linear-gradient(#0000 0%, #000 18% 82%, #0000 100%);
+            mask-image: linear-gradient(#0000 0%, #000 18% 82%, #0000 100%);
         }
-        /*
-        .left-box {
-            flex: 1;
-            padding: 10px;
+        body::after { background: var(--bg-sheen); opacity: .82; }
+        button, input, select, textarea { font: inherit; }
+        :focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+        ::selection { color: #f8fafc; background: #0891b2; }
+
+        .page { width: min(var(--content-width), 100%); margin: 0 auto; padding: 28px 18px 48px; }
+
+        .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+        .brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+        .logo {
+            width: 48px; height: 48px; flex: none; border-radius: 14px;
+            background: var(--accent-gradient); color: #fff;
+            display: grid; place-items: center; font-weight: 800; letter-spacing: .5px;
+            box-shadow: var(--control-shadow);
         }
-        */
-        .right-box {
-            flex: 2;
-            padding: 20px;
-            max-width: 100%; /* 设置最大宽度为100% */
-            box-sizing: border-box; /* 让padding不影响最大宽度 */
+        .brand h1 { margin: 0; font-size: 20px; line-height: 1.2; }
+        .brand p { margin: 3px 0 0; color: var(--text-muted); font-size: 13px; }
+        .topbar-actions { display: flex; align-items: center; gap: 10px; flex: none; }
+
+        .glass-panel {
+            position: relative; overflow: hidden;
+            background: var(--surface); border: 1px solid var(--surface-border);
+            border-radius: 32px; box-shadow: var(--shadow);
+            -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px);
         }
-        /* 媒体查询：屏幕宽度小于768px时应用下面的样式 */
-        @media screen and (max-width: 768px) {
-            .container {
-                flex-direction: column; /* 垂直排列 */
-            }
-            .right-box {
-                width: 100%; /* 平分屏幕宽度 */
-            }
-            .config-content {
-                white-space: normal; /* 在小屏幕下允许内容换行 */
-                margin-left: 20px; /* 与左边隔开20px，根据需要调整距离 */
-                margin-right: 20px; /* 与右边隔开20px，根据需要调整距离 */
-            }
+        .glass-panel::before {
+            content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: .62;
+            background: linear-gradient(180deg, #ffffff80, transparent 30%),
+                        linear-gradient(90deg, transparent, var(--accent-soft), transparent);
+        }
+        html.dark .glass-panel::before {
+            background: linear-gradient(180deg, #ffffff1a, transparent 30%),
+                        linear-gradient(90deg, transparent, var(--accent-soft), transparent);
+        }
+        .glass-panel > * { position: relative; z-index: 1; }
+
+        .pill-button {
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            min-height: 42px; padding: 10px 16px; border-radius: 999px;
+            background: var(--control-bg); border: 1px solid var(--control-border);
+            color: var(--text-primary); font-weight: 700; line-height: 1; text-decoration: none;
+            box-shadow: var(--control-shadow); cursor: pointer;
+            transition: transform .2s, background .2s, border-color .2s;
+        }
+        .pill-button:hover { background: var(--control-hover); transform: translateY(-1px); }
+        .pill-button.icon { padding: 10px 12px; font-size: 16px; }
+
+        .card { padding: 22px; margin-bottom: 20px; }
+        .card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
+        .card-head h2 { margin: 0; font-size: 15px; letter-spacing: .2px; }
+        .hint { color: var(--text-muted); font-size: 12px; font-weight: 600; }
+
+        .toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
+        .chip {
+            padding: 7px 13px; border-radius: 999px; cursor: pointer;
+            background: var(--surface-soft); border: 1px solid var(--inner-border);
+            color: var(--text-secondary); font-size: 12.5px; font-weight: 600;
+            transition: background .2s, color .2s, transform .2s;
+        }
+        .chip:hover { background: var(--control-hover); color: var(--text-primary); transform: translateY(-1px); }
+        .chip.danger { color: var(--danger); }
+
+        .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+        .field label { font-size: 12.5px; font-weight: 600; color: var(--text-secondary); }
+        input[type=text], select {
+            width: 100%; min-height: 42px; padding: 10px 12px; border-radius: 12px;
+            background: var(--control-bg); border: 1px solid var(--control-border);
+            color: var(--text-primary); transition: border-color .2s, background .2s;
+        }
+        input[type=text]:hover, select:hover { background: var(--control-hover); }
+        input::placeholder { color: var(--text-muted); }
+        select { cursor: pointer; }
+
+        .global-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; }
+        @media (max-width: 640px) { .global-grid { grid-template-columns: 1fr; } }
+
+        .sub-list { display: flex; flex-direction: column; gap: 14px; }
+        .sub-row {
+            padding: 16px; border-radius: 20px;
+            background: var(--surface-soft); border: 1px solid var(--inner-border);
+        }
+        .sub-row-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .sub-row-head span { font-size: 13px; font-weight: 700; color: var(--text-secondary); }
+        .sub-fields { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+        .sub-fields .col-url { grid-column: 1 / -1; }
+        @media (max-width: 720px) { .sub-fields { grid-template-columns: 1fr 1fr; } }
+
+        .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+        .primary {
+            display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+            min-height: 48px; padding: 12px 22px; border: none; border-radius: 999px;
+            background: var(--accent-gradient); color: #fff; font-weight: 800; font-size: 15px;
+            cursor: pointer; box-shadow: var(--control-shadow);
+            transition: transform .2s, filter .2s;
+        }
+        .primary:hover { transform: translateY(-1px); filter: brightness(1.05); }
+        .primary:disabled { opacity: .65; cursor: default; transform: none; }
+        .primary.secondary { background: var(--control-bg); color: var(--text-primary); border: 1px solid var(--control-border); }
+        .spinner {
+            width: 16px; height: 16px; border-radius: 50%; display: none;
+            border: 2px solid #ffffff88; border-top-color: #fff;
+            animation: spin .8s linear infinite;
+        }
+        .primary.loading .spinner { display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .toast-region {
+            position: fixed; top: 18px; right: 18px; z-index: 4000;
+            width: min(360px, 100vw - 36px); display: flex; flex-direction: column; gap: 10px;
+            pointer-events: none;
+        }
+        .toast {
+            display: flex; align-items: center; gap: 11px; padding: 13px 15px;
+            border-radius: 16px; background: var(--surface-strong);
+            border: 1px solid var(--surface-border); box-shadow: var(--shadow);
+            color: var(--text-primary); animation: toast-in .2s ease-out;
+        }
+        .toast-icon {
+            width: 25px; height: 25px; flex: none; border-radius: 50%;
+            background: var(--success); color: #fff; font-weight: 800;
+            display: grid; place-items: center;
+        }
+        .toast.error .toast-icon { background: var(--danger); }
+        @keyframes toast-in { from { opacity: 0; transform: translateY(-8px); } }
+
+        footer { margin-top: 26px; text-align: center; color: var(--text-muted); font-size: 12.5px; }
+        footer code { color: var(--accent-blue); }
+
+        @media (max-width: 640px) {
+            .glass-panel, .card { border-radius: 24px; }
+            .page { padding-top: 20px; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            * { transition-duration: .01ms !important; animation-duration: .01ms !important; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!--
-        <div class="left-box">
-            <h1>Providers JSON 模板</h1>
-            <form id="providers-form" method="POST" action="/update_providers">
-                <textarea name="providers_data" rows="10" cols="40" style="width: 400px; height: 400px;">{{ providers_data | safe }}</textarea>
-                <br>
-            </form>
-        </div>
-        -->
-        <div class="right-box">
-            <h1>Edit TEMP_JSON_DATA</h1>
-            <form id="temp-json-form" method="POST" action="/edit_temp_json">
-                <textarea name="temp_json_data" rows="10" cols="40" style="width: 400px; height: 400px;">{{ temp_json_data | default('') }}</textarea>
-                <br>
-                <input type="submit" value="save">
-            </form>
-            <button onclick="toggleLanguage()">Switch Language</button>
-            <div class="form-container" style="display: flex; align-items: center;">
-                <form method="POST" action="/generate_config" style="display: flex; align-items: center;">
-                    <select name="template_index">
-                        {% for option in template_options %}
-                        <option value="{{ loop.index - 1 }}">{{ option }}</option>
+    <div class="page">
+        <header class="topbar">
+            <div class="brand">
+                <div class="logo">SB</div>
+                <div>
+                    <h1>sing-box-subscribe</h1>
+                    <p>订阅 → sing-box 配置生成器</p>
+                </div>
+            </div>
+            <div class="topbar-actions">
+                <a class="pill-button" href="https://github.com/canghowl5420/sing-box-subscribe" target="_blank" rel="noopener noreferrer">GitHub</a>
+                <button class="pill-button icon" id="theme-toggle" type="button" title="切换主题" aria-label="切换主题">🌙</button>
+            </div>
+        </header>
+
+        <section class="glass-panel card">
+            <div class="card-head">
+                <h2>全局设置</h2>
+                <span class="hint">模板 / 排除协议</span>
+            </div>
+            <div class="global-grid">
+                <div class="field">
+                    <label for="tpl">模板</label>
+                    <select id="tpl">
+                        {% for t in templates %}
+                        <option value="{{ t }}" {% if t == 'default' %}selected{% endif %}>{{ t }}</option>
                         {% endfor %}
                     </select>
-                    <input type="submit" value="Select and Generate">
-                </form>
+                </div>
+                <div class="field">
+                    <label for="eps">排除的协议（逗号分隔）</label>
+                    <input type="text" id="eps" value="ssr" placeholder="ssr 或 ssr,hy2">
+                </div>
             </div>
-        </div>
-        <div class="config-content">
-            <h3 style="margin: 8px 0; font-size: 14px;"><a href="https://github.com/Toperlock/sing-box-subscribe#%E9%A1%B5%E9%9D%A2%E6%93%8D%E4%BD%9C%E6%AD%A5%E9%AA%A4" target="_blank" rel="noopener noreferrer">请务必：点击查看操作说明！！！</a></h3>
-            <h3 style="margin: 8px 0; font-size: 14px;"><a href="https://github.com/Toperlock/sing-box-subscribe/tree/main/instructions#steps-for-page-manipulation" target="_blank" rel="noopener noreferrer">Please be sure to: Click to view operation instructions!!!</a></h3>
-            <h3 style="margin: 8px 0; font-size: 14px;"><a href="https://github.com/Toperlock/sing-box-subscribe#providersjson%E6%96%87%E4%BB%B6" target="_blank" rel="noopener noreferrer">请务必：点击查看参数含义</a></h3>
-            <h3 style="margin: 8px 0; font-size: 14px;"><a href="https://github.com/Toperlock/sing-box-subscribe/tree/main/instructions#providersjson-file" target="_blank" rel="noopener noreferrer">Please be sure to: Click to view parameter meanings.</a></h3>
-            <h3 style="margin: 8px 0; font-size: 14px;" data-translate="1" data-color="red"><span style="font-weight: bold; color: red; margin: 5px 0; font-size: 14px;">2024-1-10：我的vercel免费套餐容量要被你们占满了，有github账号的请fork本项目使用自己搭建的订阅转换网站，不然后续我会决定关闭此网站</span></h3>
-            <h3 style="margin: 8px 0; font-size: 14px;" data-translate="2"><span style="font-weight: bold; color: black; margin: 5px 0; font-size: 14px;">前提：在此网页正确填写订阅链接，生成配置失败是因为同一时间别人也在生成配置，导致你填写的内容被复原。建议使用/config/URL的形式</span></h3>
-            <h3 style="margin: 8px 0; font-size: 14px;" data-translate="3" data-color="red"><span style="font-weight: bold; color: red; margin: 5px 0; font-size: 14px;">“groups_rule_set_tun.json”模板是给 sing-box 1.8.0+ 使用的。</span></h3>
-            <h3 style="margin: 8px 0; font-size: 14px;" data-translate="4"><span style="font-weight: bold; color: black; margin: 5px 0; font-size: 14px;">填写订阅地址在引号 “” 内，注意订阅地址末尾不要有换行，这很容易被忽视！！！（为什么很喜欢填到enable为false的url里面？why？？？？看不懂false的意思吗？？？）</span></h3>
-            <h3 style="margin: 8px 0; font-size: 14px;" data-translate="5" data-color="red"><span style="font-weight: bold; color: red; margin: 5px 0; font-size: 14px;">提醒: 点击保存后请立即生成配置文件！！！</span></h3>
-            <h3 style="margin: 8px 0; font-size: 14px;" data-translate="6"><span style="font-weight: bold; color: black; margin: 5px 0; font-size: 14px;">不然别人也会看到你保存的 TEMP_JSON_DATA 内容</span></h3>
-            <h3 style="margin: 8px 0; font-size: 14px;" data-translate="7" data-color="red"><span style="font-weight: bold; color: red; margin: 5px 0; font-size: 14px;">“订阅地址”是以 "http://" 开头的【包含】节点信息的v2/clash链接或者是以 "vmess://","hysteria2://"... 之类开头的单条URI节点链接，多条URI请在每条末尾添加换行符：\n 代替换行（请你明白json写法规范），也可以填写base64内容</span></h3>
-            <h3 style="margin: 8px 0; font-size: 14px;" data-translate="8"><span style="font-weight: bold; color: black; margin: 5px 0; font-size: 14px;">机场提供的订阅链接能直接在浏览器打开，这脚本就能使用。请你自行检查是否可以。如果浏览器能打开订阅，但还是转换失败请你放弃使用此项目</span></h3>
-            <h3 style="margin: 8px 0; font-size: 14px;" data-translate="9" data-color="red"><span style="font-weight: bold; color: red; margin: 5px 0; font-size: 14px;">需要特殊环境才能打开的订阅链接，请你在 TEMP_JSON_DATA 修改 "User-Agent" 或者先行把机场订阅链接内容复制到gist里，脚本才会解析成功。或者本地运行脚本</span></h3>
-            <h3 style="margin: 8px 0; font-size: 14px;" data-translate="10"><span style="font-weight: bold; color: black; margin: 5px 0; font-size: 14px;">全部都是 SSR 协议会报错，或者请删掉左边方框内 exclude_protocol 引号里面的 ssr 这个三个字符即可！！！！！！</span></h3>
-            <h3 style="margin: 8px 0; font-size: 14px;" data-translate="11" data-color="red"><span style="font-weight: bold; color: red; margin: 5px 0; font-size: 14px;">机场订阅里有hy2新协议，请修改 "User-Agent" 为：clashmeta。球球你了，别塞文件大于1MB的clash，你只需要保留proxies字段，别写那破鸡巴规则了，vercel服务器解析超时了懂吗老弟</span></h3>
-            <h3 style="margin: 8px 0; font-size: 14px;" data-translate="12"><span style="font-weight: bold; color: black; margin: 5px 0; font-size: 14px;">以上不是废话，没成功生成配置请你仔细阅读以上内容</span></h3>
-            <h3 style="margin: 8px 0; font-size: 14px;" data-translate="13" data-color="red"><span style="font-weight: bold; color: red; margin: 5px 0; font-size: 14px;">不看说明的都是傻逼，自以为是的大聪明</span></h3>
-            <h3 style="margin: 8px 0; font-size: 14px;" data-translate="14"><span style="font-weight: bold; color: black; margin: 5px 0; font-size: 14px;">生成配置成功后请不要用第三方输入法复制内容，会有长度限制复制不全</span></h3>
-            <h3 style="margin: 8px 0; font-size: 14px;"><span style="font-weight: bold; color: red; margin: 5px 0; font-size: 14px;">Một số Link Tiếng Việt không hoạt động với script này, vui lòng chạy nó trên local</span></h3>
-            <h3 style="margin: 8px 0; font-size: 14px;"><a href="https://github.com/Toperlock/sing-box-subscribe/blob/main/instructions/README.md#-demonstration-video" target="_blank" rel="noopener noreferrer">Video hoạt động</a></h3>
-            <h3 style="margin: 8px 0; font-size: 14px;"><a href="https://github.com/Toperlock/sing-box-subscribe/issues" target="_blank" rel="noopener noreferrer">遇到问题请开issue</a></h3>
-            <h3 style="margin: 8px 0; font-size: 14px;"><a href="https://github.com/Toperlock/sing-box-subscribe/issues" target="_blank" rel="noopener noreferrer">Please open an issue on github if you encounter problems.</a></h3>
-            <pre id="config-text"></pre>
-        </div>
+        </section>
+
+        <section class="glass-panel card">
+            <div class="card-head">
+                <h2>订阅列表</h2>
+                <span class="hint" title="tag 是订阅标识，模板里可用 {tag} 引用该订阅的节点；留空自动为 tag_1、tag_2…">tag 说明 ⓘ</span>
+            </div>
+            <div class="sub-list" id="sub-list"></div>
+            <div class="toolbar" style="margin-top:14px;">
+                <button class="chip" id="btn-add" type="button">+ 添加订阅</button>
+            </div>
+
+            <div class="actions">
+                <button class="primary secondary" id="btn-json" type="button">生成订阅 JSON</button>
+                <button class="primary loading" id="btn-config" type="button">
+                    <span class="spinner"></span> 生成 config.json
+                </button>
+            </div>
+        </section>
+
+        <footer>
+            表单会生成 <code>POST /config</code> 的请求 JSON；「生成订阅 JSON」下载该 JSON，「生成 config.json」调用接口并下载完整配置。
+        </footer>
     </div>
+
+    <datalist id="ua-options">
+        <option value="clash.meta"></option>
+        <option value="clashmeta"></option>
+        <option value="sing-box"></option>
+        <option value="v2rayng"></option>
+        <option value="ClashforWindows"></option>
+        <option value="ClashX"></option>
+        <option value="Surge"></option>
+        <option value="Quantumult X"></option>
+        <option value="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Safari/605.1.15"></option>
+    </datalist>
+
+    <div class="toast-region" id="toasts"></div>
+
     <script>
-        const initialTempJsonData = '{"subscribes":[{"url":"URL","tag":"tag_1","enabled":true,"emoji":1,"subgroup":"","prefix":"","User-Agent":"v2rayng"},{"url":"URL","tag":"tag_2","enabled":false,"emoji":0,"subgroup":"命名/named","prefix":"❤️","User-Agent":"clashmeta"}],"auto_set_outbounds_dns":{"proxy":"","direct":""},"save_config_path":"./config.json","auto_backup":false,"exclude_protocol":"ssr","config_template":"","Only-nodes":false}';
-        let tempJsonData = initialTempJsonData;
-        document.querySelector('#temp-json-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const form = e.target;
-            const formData = new FormData(form);
-            const response = await fetch(form.action, {
-                method: form.method,
-                body: formData,
-            });
-            if (response.ok) {
-                const responseData = await response.text();
-                const configContent = document.querySelector('#config-text');
-                configContent.textContent = responseData
-            }
+        const root = document.documentElement;
+        const themeToggle = document.getElementById('theme-toggle');
+        const subList = document.getElementById('sub-list');
+        const toasts = document.getElementById('toasts');
+        const btnConfig = document.getElementById('btn-config');
+        let seq = 0;
+
+        // ---- 主题 ----
+        const savedTheme = localStorage.getItem('sbs-theme');
+        if (savedTheme === 'dark' || (!savedTheme && matchMedia('(prefers-color-scheme: dark)').matches)) {
+            root.classList.add('dark');
+        }
+        function syncThemeIcon() {
+            themeToggle.textContent = root.classList.contains('dark') ? '☀️' : '🌙';
+        }
+        themeToggle.addEventListener('click', () => {
+            root.classList.toggle('dark');
+            localStorage.setItem('sbs-theme', root.classList.contains('dark') ? 'dark' : 'light');
+            syncThemeIcon();
         });
-        const languageData = {
-            "1": "2024-1-10: My vercel free plan Usage is almost used up by you. If you have a github account, please fork this project and use the subscription conversion website you built. Otherwise, I will decide to close this website.",
-            "2": "Prerequisite: Fill in the subscription link correctly on this web page. The failure to generate the configuration is because someone else is generating the configuration at the same time, causing the content you filled in to be cleared. It is recommended to use the form /config/URL.",
-            "3": "The 'groups_rule_set_tun.json' template is for sing-box 1.8.0+. Please use other templates for the old version of sing-box",
-            "4": "Fill in the subscription link within the quotes '', and be careful not to have line breaks at the end of the subscription link, as this can be easily overlooked!!! (Why do you like to fill in URLs with enable set to false? why? ? ? ?)",
-            "5": "Reminder: After clicking save, please immediately generate the configuration file!!!",
-            "6": "Otherwise, others will be able to see the content of your saved TEMP_JSON_DATA.",
-            "7": "The 'subscription link' starts with 'http://' and includes node information for v2/clash links or is a single URI node link starting with 'vmess://', 'hysteria2://'... etc. Link, if there are multiple URIs, please add a newline character at the end of each one: '\\n' instead of newline (please understand the json writing specification), you can also fill in the base64 content.",
-            "8": "subscription links provided by Service can be directly opened in the browser, and the script can use them. Please check if it works on your end.",
-            "9": "For subscription links that require a special environment to open, please modify 'User-Agent' in TEMP_JSON_DATA, or copy the content of the airport subscription link to gist in advance for the script to parse successfully. Alternatively, run the script locally.",
-            "10": "All SSR protocols will report errors, or please delete the three characters 'ssr' in the exclude_protocol quotation marks in the left box.",
-            "11": "If there is a new hy2 protocol in the sub link, please modify 'User-Agent' to: clashmeta. Damn it, don’t plug in a crash with a file larger than 1MB. You only need to keep the proxies field. Don’t write those crappy rules. The vercel server parsing timed out. Do you understand?",
-            "12": "The above is not nonsense; if you fail to generate the configuration successfully, please read the above content carefully.",
-            "13": "Because there is no database used, it will not return a configuration file link. After generating the configuration content, copy it to gist as a sing-box remote link.",
-            "14": "After successfully generating the configuration, please do not use third-party input methods to copy the content, as there may be length limitations and the copy may not be complete.",
-            "15": "Please open an issue on github if you encounter problems.",
-            // 添加其他翻译...
-        };
-        let isEnglish = false; // 初始状态为中文
+        syncThemeIcon();
 
-        function toggleLanguage() {
-            isEnglish = !isEnglish;
-            const elementsToTranslate = document.querySelectorAll('[data-translate]');
+        // ---- Toast ----
+        function toast(message, type = 'ok') {
+            const el = document.createElement('div');
+            el.className = 'toast' + (type === 'error' ? ' error' : '');
+            el.innerHTML = '<span class="toast-icon">' + (type === 'error' ? '!' : '✓') + '</span><span></span>';
+            el.lastElementChild.textContent = message;
+            toasts.appendChild(el);
+            setTimeout(() => el.remove(), 3200);
+        }
 
-            elementsToTranslate.forEach(element => {
-                const key = element.getAttribute('data-translate');
-                const originalColor = element.getAttribute('data-color');
-                const originalLink = element.getAttribute('data-link');
+        // ---- 订阅行 ----
+        function esc(value) {
+            return String(value).replace(/[&<>"']/g, (c) => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[c]));
+        }
 
-                if (isEnglish && languageData[key]) {
-                    if (element.tagName === 'A') {
-                        element.href = languageData[key];
-                    } else {
-                        // 处理 <span> 元素
-                        const spanElement = element.querySelector('span');
-                        if (spanElement) {
-                            spanElement.textContent = languageData[key];
-                            spanElement.style.color = originalColor;
-                            spanElement.setAttribute('data-link', languageData[key]);
-                        } else {
-                            element.textContent = languageData[key];
-                            element.style.color = originalColor;
-                        }
-                    }
-                } else {
-                    if (element.tagName === 'A') {
-                        element.href = originalLink;
-                    } else {
-                    // 如果需要，可以添加其他语言的支持
-                        window.location.reload();
-                    }
-                }
+        function addRow(defaults = {}) {
+            const row = document.createElement('div');
+            row.className = 'sub-row';
+            row.innerHTML = `
+                <div class="sub-row-head">
+                    <span class="sub-title"></span>
+                    <button class="chip danger remove" type="button">删除</button>
+                </div>
+                <div class="sub-fields">
+                    <div class="field col-url">
+                        <label>订阅 URL</label>
+                        <input type="text" class="f-url" placeholder="https://... 或 file:///data/subs.txt" value="${esc(defaults.url || '')}">
+                    </div>
+                    <div class="field">
+                        <label>tag</label>
+                        <input type="text" class="f-tag" placeholder="留空自动 tag_N" value="${esc(defaults.tag || '')}">
+                    </div>
+                    <div class="field">
+                        <label>prefix</label>
+                        <input type="text" class="f-prefix" placeholder="节点名前缀" value="${esc(defaults.prefix || '')}">
+                    </div>
+                    <div class="field">
+                        <label>User-Agent</label>
+                        <input type="text" class="f-ua" list="ua-options" value="${esc(defaults.ua || 'clash.meta')}">
+                    </div>
+                    <div class="field">
+                        <label>emoji</label>
+                        <select class="f-emoji">
+                            <option value="1">1 · 加国旗 emoji</option>
+                            <option value="0">0 · 不加</option>
+                        </select>
+                    </div>
+                </div>`;
+            if (defaults.emoji === 0) row.querySelector('.f-emoji').value = '0';
+            row.querySelector('.remove').addEventListener('click', () => {
+                row.remove();
+                renumber();
+            });
+            subList.appendChild(row);
+            renumber();
+        }
+
+        function renumber() {
+            subList.querySelectorAll('.sub-row').forEach((row, i) => {
+                row.querySelector('.sub-title').textContent = '订阅 #' + (i + 1);
             });
         }
+
+        function collect() {
+            const subscribes = [];
+            subList.querySelectorAll('.sub-row').forEach((row) => {
+                const url = row.querySelector('.f-url').value.trim();
+                if (!url) return;
+                const item = { url, emoji: Number(row.querySelector('.f-emoji').value) };
+                const tag = row.querySelector('.f-tag').value.trim();
+                const prefix = row.querySelector('.f-prefix').value.trim();
+                const ua = row.querySelector('.f-ua').value.trim();
+                if (tag) item.tag = tag;
+                if (prefix) item.prefix = prefix;
+                if (ua) item['User-Agent'] = ua;
+                subscribes.push(item);
+            });
+            return {
+                subscribes,
+                config_template: document.getElementById('tpl').value,
+                exclude_protocol: document.getElementById('eps').value.trim(),
+            };
+        }
+
+        function download(filename, text) {
+            const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function setLoading(loading) {
+            btnConfig.classList.toggle('loading', loading);
+            btnConfig.disabled = loading;
+            btnConfig.lastChild.textContent = loading ? ' 生成中…' : ' 生成 config.json';
+        }
+
+        // ---- 添加 / 初始行 ----
+        document.getElementById('btn-add').addEventListener('click', () => addRow());
+        addRow();
+
+        // ---- 生成订阅 JSON ----
+        document.getElementById('btn-json').addEventListener('click', () => {
+            const payload = collect();
+            if (!payload.subscribes.length) { toast('请至少填写一条订阅 URL', 'error'); return; }
+            download('providers.json', JSON.stringify(payload, null, 2));
+            toast('已生成 providers.json');
+        });
+
+        // ---- 生成 config.json ----
+        btnConfig.addEventListener('click', async () => {
+            const payload = collect();
+            if (!payload.subscribes.length) { toast('请至少填写一条订阅 URL', 'error'); return; }
+            setLoading(true);
+            try {
+                const response = await fetch('/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                const text = await response.text();
+                if (!response.ok) {
+                    let message = text;
+                    try { message = JSON.parse(text).message || text; } catch (e) { /* keep raw */ }
+                    throw new Error(message);
+                }
+                download('config.json', text);
+                toast('已生成 config.json');
+            } catch (err) {
+                toast(String(err.message), 'error');
+            } finally {
+                setLoading(false);
+            }
+        });
     </script>
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <ul class="flashes">
-                {% for message in messages %}
-                    <li>{{ message }}</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
-    {% endwith %}
 </body>
 </html>

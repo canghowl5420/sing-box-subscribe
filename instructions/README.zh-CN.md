@@ -10,6 +10,10 @@
 
 **Vercel 服务器的处理时间上限是 10 秒。如果 clash 文件太大，会因超时而失败！！！**
 
+> **本分支已把接口改为 `POST /config`（请求体为 JSON）**，每个订阅的 `tag`、`User-Agent`、`prefix`、`emoji`、`ex-node-name`、`subgroup` 等都可以独立设置，不再需要把订阅和参数拼进 URL。
+> 用法、JSON 格式与 curl 示例见 [docs/api.md](../docs/api.md)。
+> 下面关于 `/config/URL_LINK?...` 的说明是**旧写法，已移除**。
+
 ## Feature
 
 **sing-box 网页解析器**
@@ -202,7 +206,7 @@ Windows 系统建议把命令写进一个批处理程序里执行。
 
 使用前，请先编辑 `providers.json` 文件和 `config_template` 目录下的 `.json` 模板文件。
 
-内置了一份省心配置 `config_template_groups_rule_set_tun`，可根据不同分类过滤节点：
+内置模板：`default.json`（默认，适配较新版 sing-box）与 `sb-config-1.12.json`（适配 sing-box 1.12）。`default.json` 会按地区过滤节点：
 * 实现 `Openai` 路由规则
 * 实现 `Youtube` 路由规则
 * 实现 `Google` 路由规则

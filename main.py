@@ -3,19 +3,11 @@ import re
 from datetime import datetime
 from urllib.parse import urlparse
 from collections import OrderedDict
-from api.app import TEMP_DIR
 from parsers.clash2base64 import clash2v2ray
 from gh_proxy_helper import set_gh_proxy
 
 parsers_mod = {}
 providers = None
-color_code = [31, 32, 33, 34, 35, 36, 91, 92, 93, 94, 95, 96]
-
-
-def loop_color(text):
-    text = '\033[1;{color}m{text}\033[0m'.format(color=color_code[0], text=text)
-    color_code.append(color_code.pop(0))
-    return text
 
 
 def init_parsers():
@@ -27,17 +19,51 @@ def init_parsers():
                 parsers_mod[f[0]] = importlib.import_module('parsers.' + f[0])
 
 
-def get_template():
-    template_dir = 'config_template'  # 配置模板文件夹路径
-    template_files = os.listdir(template_dir)  # 获取文件夹中的所有文件
-    template_list = [os.path.splitext(file)[0] for file in template_files if
-                     file.endswith('.json')]  # 移除扩展名并过滤出以.json结尾的文件
-    template_list.sort()  # 对文件名进行排序
-    return template_list
-
-
 def load_json(path):
     return json.loads(tool.readFile(path))
+
+
+def get_default_template():
+    """config_template 为空时使用的默认模板：固定为 config_template/default.json。"""
+    default_path = os.path.join('config_template', 'default.json')
+    if not os.path.isfile(default_path):
+        print('没有找到默认模板: ' + default_path)
+        sys.exit(1)
+    return default_path
+
+
+def load_template(providers):
+    """解析 config_template，返回模板 dict。
+
+    支持四种写法：
+      - 内联对象        {"outbounds": [...]}
+      - 远程 URL         http(s)://...
+      - 本地文件         绝对/相对路径、file://
+      - 文件名          config_template/ 下的文件（可省 .json 后缀）
+    config_template 为空时使用默认模板。
+    """
+    template = providers.get('config_template')
+    if isinstance(template, dict):
+        return template
+    if isinstance(template, str) and template.strip():
+        value = template.strip()
+        if value.startswith(('http://', 'https://')):
+            print('使用远程模板: \033[33m' + value + '\033[0m')
+            response = requests.get(value)
+            response.raise_for_status()
+            return response.json()
+        if value.startswith('file://'):
+            value = value[len('file://'):]
+        for candidate in (value,
+                          os.path.join('config_template', value),
+                          os.path.join('config_template', value + '.json')):
+            if os.path.isfile(candidate):
+                print('使用本地模板: \033[33m' + candidate + '\033[0m')
+                return load_json(candidate)
+        raise FileNotFoundError('模板不存在: ' + template)
+    default_path = get_default_template()
+    print('使用默认模板: \033[33m' + default_path + '\033[0m')
+    return load_json(default_path)
 
 
 def process_subscribes(subscribes):
@@ -307,6 +333,9 @@ def get_content_form_file(url):
         node = '\n'.join(share_links)
         processed_list = tool.noblankLine(node)
         return processed_list
+    elif file_extension.lower() == '.json':
+        # 本地 sing-box / JSON 订阅：交给上层按 dict 解析（proxies / outbounds）
+        return load_json(url)
     else:
         data = tool.readFile(url)
         data = bytes.decode(data, encoding='utf-8')
@@ -315,43 +344,11 @@ def get_content_form_file(url):
 
 
 def save_config(path, nodes):
-    try:
-        if 'auto_backup' in providers and providers['auto_backup']:
-            now = datetime.now().strftime('%Y%m%d%H%M%S')
-            if os.path.exists(path):
-                os.rename(path, f'{path}.{now}.bak')
-        if os.path.exists(path):
-            os.remove(path)
-            print(f"已删除文件，并重新保存：\033[33m{path}\033[0m")
-            # print(f"File cấu hình đã được lưu vào: \033[33m{path}\033[0m")
-        else:
-            print(f"文件不存在，正在保存：\033[33m{path}\033[0m")
-            # print(f"File không tồn tại, đang lưu tại: \033[33m{path}\033[0m")
-        tool.saveFile(path, json.dumps(nodes, indent=2, ensure_ascii=False))
-    except Exception as e:
-        print(f"保存配置文件时出错：{str(e)}")
-        # print(f"Lỗi khi lưu file cấu hình: {str(e)}")
-        # 如果保存出错，尝试使用 config_file_path 再次保存
-        config_path = json.loads(temp_json_data).get("save_config_path", "config.json")
-        CONFIG_FILE_NAME = config_path
-        config_file_path = os.path.join('/tmp', CONFIG_FILE_NAME)
-        try:
-            if os.path.exists(config_file_path):
-                os.remove(config_file_path)
-                print(f"已删除文件，并重新保存：\033[33m{config_file_path}\033[0m")
-                # print(f"File cấu hình đã được lưu vào: \033[33m{config_file_path}\033[0m")
-            else:
-                print(f"文件不存在，正在保存：\033[33m{config_file_path}\033[0m")
-                # print(f"File không tồn tại, đang lưu tại: \033[33m{config_file_path}\033[0m")
-            tool.saveFile(config_file_path, json.dumps(nodes, indent=2, ensure_ascii=False))
-            # print(f"配置文件已保存到 {config_file_path}")
-            # print(f"Tập tin cấu hình đã được lưu vào {config_file_path}")
-        except Exception as e:
-            os.remove(config_file_path)
-            print(f"已删除文件：\033[33m{config_file_path}\033[0m")
-            # print(f"Các file đã bị xóa: \033[33m{config_file_path}\033[0m")
-            print(f"再次保存配置文件时出错：{str(e)}")
-            # print(f"Lỗi khi lưu lại file cấu hình: {str(e)}")
+    if providers.get('auto_backup') and os.path.exists(path):
+        now = datetime.now().strftime('%Y%m%d%H%M%S')
+        os.rename(path, f'{path}.{now}.bak')
+    tool.saveFile(path, json.dumps(nodes, indent=2, ensure_ascii=False))
+    print(f"配置已保存：\033[33m{path}\033[0m")
 
 
 def set_proxy_rule_dns(config):
@@ -537,76 +534,32 @@ def updateLocalConfig(local_host, path):
     print(r.text)
 
 
-def display_template(tl):
-    print_str = ''
-    for i in range(len(tl)):
-        print_str += loop_color('{index}、{name} '.format(index=i + 1, name=tl[i]))
-    print(print_str)
-
-
-def select_config_template(tl, selected_template_index=None):
-    if args.template_index is not None:
-        uip = args.template_index
-    else:
-        # print ('Nhập số để chọn mẫu cấu hình tương ứng (nhấn Enter để chọn mẫu cấu hình đầu tiên theo mặc định): ')
-        uip = input('输入序号，载入对应config模板（直接回车默认选第一个配置模板）：')
-        try:
-            if uip == '':
-                return 0
-            uip = int(uip)
-            if uip < 1 or uip > len(tl):
-                print('输入了错误信息！重新输入')
-                # print('Nhập thông tin không chính xác! Vui lòng nhập lại')
-                return select_config_template(tl)
-            else:
-                uip -= 1
-        except:
-            print('输入了错误信息！重新输入')
-            # print('Nhập thông tin không chính xác! Vui lòng nhập lại')
-            return select_config_template(tl)
-    return uip
-
-
-# 自定义函数，用于解析参数为 JSON 格式
 def parse_json(value):
     try:
-        return json.loads(value)
+        data = json.loads(value)
     except json.JSONDecodeError:
         raise argparse.ArgumentTypeError(f"Invalid JSON: {value}")
+    # 兼容历史遗留的“双重编码”写法
+    if isinstance(data, str):
+        data = json.loads(data)
+    return data
 
 
 if __name__ == '__main__':
     init_parsers()
     parser = argparse.ArgumentParser()
-    parser.add_argument('--temp_json_data', type=parse_json, help='临时内容')
-    parser.add_argument('--template_index', type=int, help='模板序号')
-    parser.add_argument('--gh_proxy_index', type=str, help='github加速链接')
+    parser.add_argument('--temp_json_data', type=parse_json, help='临时内容(JSON 字符串)')
+    parser.add_argument('--temp_json_file', type=str, help='临时内容(JSON 文件路径，优先于 --temp_json_data)')
+    parser.add_argument('--gh_proxy_index', type=str, help='github加速链接序号')
     args = parser.parse_args()
-    temp_json_data = args.temp_json_data
     gh_proxy_index = args.gh_proxy_index
-    if temp_json_data and temp_json_data != '{}':
-        providers = json.loads(temp_json_data)
+    if args.temp_json_file:
+        providers = json.loads(tool.readFile(args.temp_json_file).decode('utf-8'))
+    elif args.temp_json_data:
+        providers = args.temp_json_data
     else:
         providers = load_json('providers.json')  # 加载本地 providers.json
-    if providers.get('config_template'):
-        config_template_path = providers['config_template']
-        print('选择: \033[33m' + config_template_path + '\033[0m')
-        # print ('Mẫu cấu hình sử dụng: \033[33m' + template_list[uip] + '.json\033[0m')
-        response = requests.get(providers['config_template'])
-        response.raise_for_status()
-        config = response.json()
-    else:
-        template_list = get_template()
-        if len(template_list) < 1:
-            print('没有找到模板文件')
-            # print('Không tìm thấy file mẫu')
-            sys.exit()
-        display_template(template_list)
-        uip = select_config_template(template_list, selected_template_index=args.template_index)
-        config_template_path = 'config_template/' + template_list[uip] + '.json'
-        print('选择: \033[33m' + template_list[uip] + '.json\033[0m')
-        # print ('Mẫu cấu hình sử dụng: \033[33m' + template_list[uip] + '.json\033[0m')
-        config = load_json(config_template_path)
+    config = load_template(providers)
     nodes = process_subscribes(providers["subscribes"])
 
     # 处理github加速
