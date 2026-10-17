@@ -64,6 +64,17 @@ class NormalizeTests(unittest.TestCase):
         ]})
         self.assertEqual([s["emoji"] for s in providers["subscribes"]], [1, 0, 1])
 
+    def test_emoji_separator_default(self):
+        providers = generate.normalize({"subscribes": [{"url": "https://a/sub"}]})
+        self.assertEqual(providers["subscribes"][0]["emoji-separator"], " ")
+
+    def test_global_emoji_separator_fallback(self):
+        providers = generate.normalize({
+            "emoji_separator": "",
+            "subscribes": [{"url": "https://a/sub"}],
+        })
+        self.assertEqual(providers["subscribes"][0]["emoji-separator"], "")
+
     def test_unknown_fields_dropped(self):
         providers = generate.normalize({"subscribes": [{"url": "https://a/sub", "bogus": 1}],
                                         "bogus": 2})
@@ -241,6 +252,22 @@ class RunIntegrationTests(unittest.TestCase):
         # default.json 的 Proxy 引用地区分组，节点按 filter 归入 HongKong/United States
         hk = next(o for o in cfg["outbounds"] if o.get("tag") == "HongKong")
         self.assertIn("A-🇭🇰 HK-1", hk["outbounds"])
+
+    def test_emoji_separator_can_be_empty(self):
+        providers = generate.normalize({"subscribes": [
+            {"url": vmess_link("HK-1"), "prefix": "A-", "emoji": 1, "emoji-separator": ""},
+        ]})
+        cfg = json.loads(generate.run(providers))
+        tags = [o.get("tag", "") for o in cfg["outbounds"]]
+        self.assertIn("A-🇭🇰HK-1", tags)
+
+    def test_prefix_keeps_spaces(self):
+        providers = generate.normalize({"subscribes": [
+            {"url": vmess_link("HK-1"), "prefix": "A B ", "emoji": 0},
+        ]})
+        cfg = json.loads(generate.run(providers))
+        tags = [o.get("tag", "") for o in cfg["outbounds"]]
+        self.assertIn("A B HK-1", tags)
 
     def test_only_nodes_returns_flat_list(self):
         providers = generate.normalize({

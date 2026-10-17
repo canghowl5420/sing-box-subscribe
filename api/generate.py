@@ -27,6 +27,7 @@ SUBSCRIBE_DEFAULTS = {
     "tag": "",
     "enabled": True,
     "emoji": 1,
+    "emoji-separator": " ",  # emoji 与节点名之间的分隔符，"" 表示无空格
     "subgroup": "",
     "prefix": "",
     "ex-node-name": "",
@@ -42,6 +43,7 @@ PROVIDER_DEFAULTS = {
     "config_template": "",
     "Only-nodes": False,
     "gh": 0,  # 非 providers.json 字段：github 加速序号(1 开始)，0 表示不用
+    "emoji_separator": " ",  # 全局默认：订阅未指定 emoji-separator 时使用
 }
 
 
@@ -117,6 +119,9 @@ def normalize(payload):
     normalized_subs = []
     for i, raw in enumerate(subscribes):
         item = _normalize_subscribe(raw, i)
+        # 订阅未显式指定 emoji-separator 时，使用全局默认 emoji_separator
+        if "emoji-separator" not in raw:
+            item["emoji-separator"] = str(providers.get("emoji_separator", " "))
         if item["tag"] in seen:
             raise BadRequest(f"订阅 tag 重复：{item['tag']}")
         seen.add(item["tag"])

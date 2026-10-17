@@ -52,8 +52,9 @@
 | `tag` | string | `tag_1`、`tag_2`… | 订阅标识。模板里可用 `{tag}` 引用该订阅的节点；**必须唯一** |
 | `enabled` | bool | `true` | 为 `false` 时跳过该订阅 |
 | `emoji` | 0/1 | `1` | 是否按国别给节点名加国旗 emoji |
+| `emoji-separator` | string | `" "` | emoji 与节点名之间的分隔符；设 `""` 则无空格，如 `🇭🇰HK-1` |
 | `subgroup` | string | `""` | 子分组名；非空时该订阅会单独生成一个 selector 分组 |
-| `prefix` | string | `""` | 节点名前缀 |
+| `prefix` | string | `""` | 节点名前缀；**保留空格**（如 `"A- "` 会产生 `A- 🇭🇰 HK-1`） |
 | `User-Agent` | string | `clash.meta` | 拉取订阅时使用的 UA（部分机场需要特定 UA，如 `clashmeta`） |
 | `ex-node-name` | string | `""` | 需要过滤掉的节点关键词，多个用逗号或 `|` 分隔 |
 
@@ -67,6 +68,7 @@
 | `Only-nodes` | bool | `false` | 为 `true` 时只输出节点数组，不套模板 |
 | `auto_backup` | bool | `false` | 落盘时是否备份旧配置 |
 | `gh` | int | `0` | GitHub 加速序号（从 1 开始），用于替换模板里 rule_set 的 GitHub 链接 |
+| `emoji_separator` | string | `" "` | 全局默认的 emoji 分隔符；订阅未写 `emoji-separator` 时生效 |
 | `subscribes`（缺省 `enabled`） | — | — | 未写 `enabled` 视为 true |
 
 > 约束：`subscribes` 数量上限默认 10（环境变量 `MAX_SUBS` 可调）；
@@ -104,7 +106,7 @@
 - **默认值**：留空时按顺序自动补 `tag_1`、`tag_2`…。
 - **唯一性**：`tag` 必须唯一，重复返回 `400`。
 - **subgroup**：若该订阅带 `subgroup`，`tag` 会被改写成 `<tag>-<子组名>-subgroup`，并额外生成一个 selector 分组。
-- **与节点名无关**：节点名 = `prefix` + `emoji`（国旗）+ 原节点名，即 **prefix 在 emoji 前**。想改显示效果请用 `prefix` / `emoji`，不是 `tag`。
+- **与节点名无关**：节点名 = `prefix` + `emoji`（国旗）+ `emoji-separator` + 原节点名，即 **prefix 在 emoji 前**。`prefix` 会**原样保留空格**；`emoji-separator` 默认一个空格，设为 `""` 则 emoji 与名称紧贴。
 - **去重**：跨订阅按**节点名**全局去重，与 `tag` 无关。
 
 示例——两条订阅各自成组，再用 `{tag}` 引用：

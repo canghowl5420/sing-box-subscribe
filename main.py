@@ -144,10 +144,13 @@ def add_prefix(nodes, subscribe):
 
 def add_emoji(nodes, subscribe):
     if subscribe.get('emoji'):
+        # 优先级：订阅级 emoji-separator > 全局 emoji_separator > 默认一个空格
+        default_sep = (providers or {}).get('emoji_separator', ' ')
+        separator = subscribe.get('emoji-separator', default_sep)
         for node in nodes:
-            node['tag'] = tool.rename(node['tag'])
+            node['tag'] = tool.rename(node['tag'], separator)
             if node.get('detour'):
-                node['detour'] = tool.rename(node['detour'])
+                node['detour'] = tool.rename(node['detour'], separator)
 
 
 def nodefilter(nodes, subscribe):

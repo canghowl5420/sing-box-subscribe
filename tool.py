@@ -154,15 +154,15 @@ regex_patterns = {
     '🇦🇶': re.compile(r'南极|南極|(\s|-)?AQ\d*|Antarctica'),
     '🇨🇳': re.compile(r'中国|中國|江苏|北京|上海|广州|深圳|杭州|徐州|青岛|宁波|镇江|沈阳|济南|回国|back|(\s|-)?CN(?!2GIA)\d*|China'),
 }
-def rename(input_str):
+def rename(input_str, separator=' '):
     for country_code, pattern in regex_patterns.items():
         if input_str.startswith(country_code):
-            return country_code + ' ' + input_str[len(country_code):].strip()
+            return country_code + separator + input_str[len(country_code):].strip()
         if pattern.search(input_str):
             if input_str.startswith('🇺🇲'):
-                return country_code + ' ' + input_str[len('🇺🇲'):].strip()
+                return country_code + separator + input_str[len('🇺🇲'):].strip()
             else:
-                return country_code + ' ' + input_str
+                return country_code + separator + input_str
     return input_str
 
 def b64Decode(str):

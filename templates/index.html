@@ -368,14 +368,15 @@
                         <input type="text" class="f-ua" list="ua-options" value="${esc(defaults.ua || 'clash.meta')}">
                     </div>
                     <div class="field">
-                        <label>emoji</label>
+                        <label>emoji / 间隔</label>
                         <select class="f-emoji">
-                            <option value="1">1 · 加国旗 emoji</option>
-                            <option value="0">0 · 不加</option>
+                            <option value="1:space">1 · 加国旗（空格）</option>
+                            <option value="1:none">1 · 加国旗（无空格）</option>
+                            <option value="0:space">0 · 不加国旗</option>
                         </select>
                     </div>
                 </div>`;
-            if (defaults.emoji === 0) row.querySelector('.f-emoji').value = '0';
+            if (defaults.emoji === 0) row.querySelector('.f-emoji').value = '0:space';
             row.querySelector('.remove').addEventListener('click', () => {
                 row.remove();
                 renumber();
@@ -395,9 +396,14 @@
             subList.querySelectorAll('.sub-row').forEach((row) => {
                 const url = row.querySelector('.f-url').value.trim();
                 if (!url) return;
-                const item = { url, emoji: Number(row.querySelector('.f-emoji').value) };
+                const [emojiValue, sepMode] = row.querySelector('.f-emoji').value.split(':');
+                const item = {
+                    url,
+                    emoji: Number(emojiValue),
+                    'emoji-separator': sepMode === 'none' ? '' : ' ',
+                };
                 const tag = row.querySelector('.f-tag').value.trim();
-                const prefix = row.querySelector('.f-prefix').value.trim();
+                const prefix = row.querySelector('.f-prefix').value;  // 保留首尾空格
                 const ua = row.querySelector('.f-ua').value.trim();
                 if (tag) item.tag = tag;
                 if (prefix) item.prefix = prefix;
