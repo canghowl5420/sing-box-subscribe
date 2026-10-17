@@ -235,11 +235,12 @@ class RunIntegrationTests(unittest.TestCase):
         cfg = json.loads(generate.run(providers))
         self.assertIn("outbounds", cfg)
         tags = [o.get("tag", "") for o in cfg["outbounds"]]
-        self.assertTrue(any("A-HK-1" in t for t in tags), tags)
-        self.assertTrue(any("B-US-1" in t for t in tags), tags)
+        # 顺序应为 prefix + emoji + 节点名
+        self.assertIn("A-🇭🇰 HK-1", tags)
+        self.assertIn("B-🇺🇸 US-1", tags)
         # default.json 的 Proxy 引用地区分组，节点按 filter 归入 HongKong/United States
         hk = next(o for o in cfg["outbounds"] if o.get("tag") == "HongKong")
-        self.assertTrue(any("A-HK-1" in t for t in hk["outbounds"]), hk)
+        self.assertIn("A-🇭🇰 HK-1", hk["outbounds"])
 
     def test_only_nodes_returns_flat_list(self):
         providers = generate.normalize({

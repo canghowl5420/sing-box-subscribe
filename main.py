@@ -75,8 +75,9 @@ def process_subscribes(subscribes):
             continue
         _nodes = get_nodes(subscribe['url'])
         if _nodes and len(_nodes) > 0:
-            add_prefix(_nodes, subscribe)
+            # 先加国旗 emoji，再加 prefix，保证最终顺序为 prefix + emoji + 节点名
             add_emoji(_nodes, subscribe)
+            add_prefix(_nodes, subscribe)
             nodefilter(_nodes, subscribe)
             if subscribe.get('subgroup'):
                 subscribe['tag'] = subscribe['tag'] + '-' + subscribe['subgroup'] + '-' + 'subgroup'

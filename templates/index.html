@@ -150,8 +150,8 @@
         input::placeholder { color: var(--text-muted); }
         select { cursor: pointer; }
 
-        .global-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; }
-        @media (max-width: 640px) { .global-grid { grid-template-columns: 1fr; } }
+        .global-grid { display: grid; grid-template-columns: 1fr 1.6fr 1fr; gap: 14px; }
+        @media (max-width: 860px) { .global-grid { grid-template-columns: 1fr; } }
 
         .sub-list { display: flex; flex-direction: column; gap: 14px; }
         .sub-row {
@@ -220,8 +220,8 @@
             <div class="brand">
                 <div class="logo">SB</div>
                 <div>
-                    <h1>sing-box-subscribe</h1>
-                    <p>订阅 → sing-box 配置生成器</p>
+                    <h1>sing-box 配置生成器</h1>
+                    <p>订阅 → config.json</p>
                 </div>
             </div>
             <div class="topbar-actions">
@@ -245,6 +245,10 @@
                     </select>
                 </div>
                 <div class="field">
+                    <label for="tpl-custom">自定义模板 URL（可选，优先于上方选择）</label>
+                    <input type="text" id="tpl-custom" placeholder="https://example.com/tpl.json">
+                </div>
+                <div class="field">
                     <label for="eps">排除的协议（逗号分隔）</label>
                     <input type="text" id="eps" value="ssr" placeholder="ssr 或 ssr,hy2">
                 </div>
@@ -263,7 +267,7 @@
 
             <div class="actions">
                 <button class="primary secondary" id="btn-json" type="button">生成订阅 JSON</button>
-                <button class="primary loading" id="btn-config" type="button">
+                <button class="primary" id="btn-config" type="button">
                     <span class="spinner"></span> 生成 config.json
                 </button>
             </div>
@@ -277,11 +281,21 @@
     <datalist id="ua-options">
         <option value="clash.meta"></option>
         <option value="clashmeta"></option>
+        <option value="clash-verge/v2.4.2"></option>
+        <option value="clash-verge/v2.3.2"></option>
+        <option value="ClashMetaForAndroid/2.11.1.Meta"></option>
+        <option value="mihomo/1.19.0"></option>
+        <option value="Clash/1.18.0"></option>
         <option value="sing-box"></option>
+        <option value="sing-box/v1.11.0"></option>
         <option value="v2rayng"></option>
+        <option value="v2rayN/6.31"></option>
         <option value="ClashforWindows"></option>
         <option value="ClashX"></option>
-        <option value="Surge"></option>
+        <option value="Shadowrocket/2.2.5"></option>
+        <option value="Stash/2.5.0"></option>
+        <option value="Surge/5.3.0"></option>
+        <option value="Loon/3.1.0"></option>
         <option value="Quantumult X"></option>
         <option value="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Safari/605.1.15"></option>
     </datalist>
@@ -392,7 +406,7 @@
             });
             return {
                 subscribes,
-                config_template: document.getElementById('tpl').value,
+                config_template: document.getElementById('tpl-custom').value.trim() || document.getElementById('tpl').value,
                 exclude_protocol: document.getElementById('eps').value.trim(),
             };
         }
