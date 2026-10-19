@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}使用说明 · sing-box 配置生成器{% endblock %}
+{% block footer %}遇到问题先看 <a href="/logs" style="color:var(--accent-blue);">日志</a> 页；接口细节见 <code>docs/api.md</code>。{% endblock %}
+
+{% block content %}
+        <section class="glass-panel card doc">
+            <h2>这是什么</h2>
+            <p>把机场订阅（V2 / Clash / sing-box / 分享链接）按指定模板展开，生成可直接交给 sing-box 使用的
+            <code>config.json</code>。也支持直接调用 <code>POST /config</code> 接口。</p>
+
+            <h2>快速上手</h2>
+            <ol>
+                <li>在「生成器」页填一条或多条订阅 URL；</li>
+                <li>按需设置 <code>tag</code>、<code>prefix</code>、<code>User-Agent</code>、<code>emoji</code>，选择模板；</li>
+                <li>点「生成 config.json」下载完整配置，或点「生成订阅 JSON」下载请求体 <code>providers.json</code>。</li>
+            </ol>
+
+            <h2>字段说明</h2>
+            <ul>
+                <li><code>订阅 URL</code>：机场订阅链接；也支持 <code>vmess://</code> 等分享链接、base64、Clash YAML、sing-box JSON。</li>
+                <li><code>tag</code>：订阅标识 / 分组键，模板里可用 <code>{tag}</code> 引用该订阅的节点。<strong>留空会自动补 <code>tag_1</code>、<code>tag_2</code>…</strong>，且必须唯一。</li>
+                <li><code>prefix</code>：节点名前缀，<strong>保留空格</strong>；最终顺序为 <code>prefix + emoji + 节点名</code>。</li>
+                <li><code>User-Agent</code>：拉取订阅时使用的 UA。下拉可选常见客户端，也可直接输入自定义值（如 <code>clash-verge/v2.4.2</code>）。</li>
+                <li><code>emoji / 间隔</code>：是否按国别加国旗；可选 emoji 与节点名之间「空格 / 无空格」。</li>
+                <li><code>模板</code>：<code>config_template/</code> 下按文件名排序的模板，默认 <code>default</code>。</li>
+                <li><code>自定义模板 URL</code>：填了就优先于上方下拉，服务端会去 GET 这个地址。</li>
+                <li><code>排除的协议</code>：逗号分隔，默认 <code>ssr</code>，例如 <code>ssr,hy2</code>。</li>
+            </ul>
+
+            <h2>两个按钮</h2>
+            <ul>
+                <li><strong>生成订阅 JSON</strong>：只把当前表单拼成请求 JSON（<code>providers.json</code>）并下载，不访问接口。</li>
+                <li><strong>生成 config.json</strong>：调用 <code>POST /config</code>，成功后下载完整 sing-box 配置。</li>
+            </ul>
+
+            <h2>模板的四种来源</h2>
+            <ul>
+                <li>留空 / 不写：使用 <code>config_template/default.json</code>（固定默认模板）；</li>
+                <li>文件名：如 <code>sb-config-1.12</code>，读取 <code>config_template/sb-config-1.12.json</code>；</li>
+                <li>远程 URL：如 <code>https://example.com/tpl.json</code>；</li>
+                <li>内联对象：直接在请求 JSON 里写 <code>"config_template": { "outbounds": [...] }</code>。</li>
+            </ul>
+
+            <h2>直接调用接口</h2>
+            <pre><code>curl -s http://127.0.0.1:5000/config \
+  -H 'Content-Type: application/json' \
+  -d '{
+        "subscribes": [
+          {"url": "https://a.com/sub?token=AAA", "tag": "airportA", "prefix": "A-"}
+        ],
+        "config_template": "default",
+        "exclude_protocol": "ssr"
+      }' \
+  -o config.json</code></pre>
+            <p>请求字段、错误码、<code>file://</code> 本地订阅、<code>LOCAL_DATA_DIR</code> 等见
+            <code>docs/api.md</code>。</p>
+
+            <h2>排错</h2>
+            <ul>
+                <li>生成失败时，页面右下角会弹出错误；更完整的信息在「<a href="/logs" style="color:var(--accent-blue);">日志</a>」页。</li>
+                <li>日志是<strong>进程内环形缓冲（最近 200 条）</strong>，进程重启后会清空；多进程部署时各进程各有一份。</li>
+                <li>常见原因：订阅链接无法访问、UA 不匹配、模板不存在、订阅里没有可解析的节点。</li>
+            </ul>
+
+            <h2>安全提示</h2>
+            <ul>
+                <li>接口无鉴权，建议只在内网 / 本机使用，或自行加反向代理与认证。</li>
+                <li>本机模板只允许读取 <code>config_template/</code> 目录；本地订阅文件受 <code>LOCAL_DATA_DIR</code> 限制。</li>
+            </ul>
+        </section>
+{% endblock %}

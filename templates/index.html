@@ -1,235 +1,7 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="color-scheme" content="light dark">
-    <title>sing-box-subscribe · 配置生成器</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%230284c7'/%3E%3Cstop offset='.45' stop-color='%230891b2'/%3E%3Cstop offset='1' stop-color='%2365a30d'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='url(%23g)'/%3E%3Ctext x='16' y='22' font-family='system-ui,sans-serif' font-size='16' font-weight='700' fill='white' text-anchor='middle'%3ESB%3C/text%3E%3C/svg%3E">
-    <style>
-        :root {
-            color-scheme: light dark;
-            --content-width: 1040px;
-            --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #eef2f7 48%, #e2e8f0 100%);
-            --bg-grid: #0f172a0e;
-            --bg-sheen: linear-gradient(115deg, transparent 0%, transparent 33%, #0ea5e91c 48%, #84cc1617 58%, transparent 73%, transparent 100%);
-            --surface: #ffffffd1;
-            --surface-strong: #fffffff0;
-            --surface-soft: #ffffff85;
-            --surface-border: #ffffffb3;
-            --inner-border: #0f172a17;
-            --control-bg: #ffffffb8;
-            --control-hover: #fffffff0;
-            --control-border: #1a202c24;
-            --text-primary: #1a202c;
-            --text-secondary: #4a5568;
-            --text-muted: #64748b;
-            --accent-gradient: linear-gradient(135deg, #0284c7 0%, #0891b2 45%, #65a30d 100%);
-            --accent-soft: #0284c71a;
-            --accent-blue: #0284c7;
-            --success: #059669;
-            --danger: #dc2626;
-            --shadow: 0 28px 70px #0f172a21;
-            --control-shadow: 0 12px 28px #1f26871f;
-            --focus-ring: #0ea5e952;
-        }
-        html.dark {
-            --bg-gradient: linear-gradient(135deg, #05070b 0%, #0d111a 46%, #111827 100%);
-            --bg-grid: #94a3b813;
-            --bg-sheen: linear-gradient(115deg, transparent 0%, transparent 31%, #22d3ee1f 47%, #84cc1614 58%, transparent 74%, transparent 100%);
-            --surface: #0f172ab8;
-            --surface-strong: #131c2df0;
-            --surface-soft: #ffffff0b;
-            --surface-border: #94a3b82e;
-            --inner-border: #ffffff16;
-            --control-bg: #141821b3;
-            --control-hover: #232a38e6;
-            --control-border: #ffffff29;
-            --text-primary: #f8fafc;
-            --text-secondary: #a0aec0;
-            --text-muted: #7f8ea3;
-            --accent-gradient: linear-gradient(135deg, #38bdf8 0%, #22d3ee 42%, #84cc16 100%);
-            --accent-soft: #38bdf81f;
-            --accent-blue: #38bdf8;
-            --success: #34d399;
-            --danger: #fb7185;
-            --shadow: 0 32px 80px #0000009e;
-            --control-shadow: 0 16px 34px #0000005c;
-            --focus-ring: #67e8f957;
-        }
-        * { box-sizing: border-box; }
-        html, body { min-height: 100%; }
-        body {
-            margin: 0;
-            color: var(--text-primary);
-            background: var(--bg-gradient);
-            background-attachment: fixed;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
-            -webkit-font-smoothing: antialiased;
-            overflow-x: hidden;
-        }
-        body::before, body::after { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; }
-        body::before {
-            background-image: linear-gradient(var(--bg-grid) 1px, transparent 1px),
-                              linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
-            background-size: 36px 36px;
-            opacity: .58;
-            -webkit-mask-image: linear-gradient(#0000 0%, #000 18% 82%, #0000 100%);
-            mask-image: linear-gradient(#0000 0%, #000 18% 82%, #0000 100%);
-        }
-        body::after { background: var(--bg-sheen); opacity: .82; }
-        button, input, select, textarea { font: inherit; }
-        :focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
-        ::selection { color: #f8fafc; background: #0891b2; }
+{% extends "base.html" %}
+{% block title %}sing-box 配置生成器{% endblock %}
 
-        .page { width: min(var(--content-width), 100%); margin: 0 auto; padding: 28px 18px 48px; }
-
-        .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
-        .brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
-        .logo {
-            width: 48px; height: 48px; flex: none; border-radius: 14px;
-            background: var(--accent-gradient); color: #fff;
-            display: grid; place-items: center; font-weight: 800; letter-spacing: .5px;
-            box-shadow: var(--control-shadow);
-        }
-        .brand h1 { margin: 0; font-size: 20px; line-height: 1.2; }
-        .brand p { margin: 3px 0 0; color: var(--text-muted); font-size: 13px; }
-        .topbar-actions { display: flex; align-items: center; gap: 10px; flex: none; }
-
-        .glass-panel {
-            position: relative; overflow: hidden;
-            background: var(--surface); border: 1px solid var(--surface-border);
-            border-radius: 32px; box-shadow: var(--shadow);
-            -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px);
-        }
-        .glass-panel::before {
-            content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: .62;
-            background: linear-gradient(180deg, #ffffff80, transparent 30%),
-                        linear-gradient(90deg, transparent, var(--accent-soft), transparent);
-        }
-        html.dark .glass-panel::before {
-            background: linear-gradient(180deg, #ffffff1a, transparent 30%),
-                        linear-gradient(90deg, transparent, var(--accent-soft), transparent);
-        }
-        .glass-panel > * { position: relative; z-index: 1; }
-
-        .pill-button {
-            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-            min-height: 42px; padding: 10px 16px; border-radius: 999px;
-            background: var(--control-bg); border: 1px solid var(--control-border);
-            color: var(--text-primary); font-weight: 700; line-height: 1; text-decoration: none;
-            box-shadow: var(--control-shadow); cursor: pointer;
-            transition: transform .2s, background .2s, border-color .2s;
-        }
-        .pill-button:hover { background: var(--control-hover); transform: translateY(-1px); }
-        .pill-button.icon { padding: 10px 12px; font-size: 16px; }
-
-        .card { padding: 22px; margin-bottom: 20px; }
-        .card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
-        .card-head h2 { margin: 0; font-size: 15px; letter-spacing: .2px; }
-        .hint { color: var(--text-muted); font-size: 12px; font-weight: 600; }
-
-        .toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
-        .chip {
-            padding: 7px 13px; border-radius: 999px; cursor: pointer;
-            background: var(--surface-soft); border: 1px solid var(--inner-border);
-            color: var(--text-secondary); font-size: 12.5px; font-weight: 600;
-            transition: background .2s, color .2s, transform .2s;
-        }
-        .chip:hover { background: var(--control-hover); color: var(--text-primary); transform: translateY(-1px); }
-        .chip.danger { color: var(--danger); }
-
-        .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-        .field label { font-size: 12.5px; font-weight: 600; color: var(--text-secondary); }
-        input[type=text], select {
-            width: 100%; min-height: 42px; padding: 10px 12px; border-radius: 12px;
-            background: var(--control-bg); border: 1px solid var(--control-border);
-            color: var(--text-primary); transition: border-color .2s, background .2s;
-        }
-        input[type=text]:hover, select:hover { background: var(--control-hover); }
-        input::placeholder { color: var(--text-muted); }
-        select { cursor: pointer; }
-
-        .global-grid { display: grid; grid-template-columns: 1fr 1.6fr 1fr; gap: 14px; }
-        @media (max-width: 860px) { .global-grid { grid-template-columns: 1fr; } }
-
-        .sub-list { display: flex; flex-direction: column; gap: 14px; }
-        .sub-row {
-            padding: 16px; border-radius: 20px;
-            background: var(--surface-soft); border: 1px solid var(--inner-border);
-        }
-        .sub-row-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-        .sub-row-head span { font-size: 13px; font-weight: 700; color: var(--text-secondary); }
-        .sub-fields { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
-        .sub-fields .col-url { grid-column: 1 / -1; }
-        @media (max-width: 720px) { .sub-fields { grid-template-columns: 1fr 1fr; } }
-
-        .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
-        .primary {
-            display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-            min-height: 48px; padding: 12px 22px; border: none; border-radius: 999px;
-            background: var(--accent-gradient); color: #fff; font-weight: 800; font-size: 15px;
-            cursor: pointer; box-shadow: var(--control-shadow);
-            transition: transform .2s, filter .2s;
-        }
-        .primary:hover { transform: translateY(-1px); filter: brightness(1.05); }
-        .primary:disabled { opacity: .65; cursor: default; transform: none; }
-        .primary.secondary { background: var(--control-bg); color: var(--text-primary); border: 1px solid var(--control-border); }
-        .spinner {
-            width: 16px; height: 16px; border-radius: 50%; display: none;
-            border: 2px solid #ffffff88; border-top-color: #fff;
-            animation: spin .8s linear infinite;
-        }
-        .primary.loading .spinner { display: inline-block; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        .toast-region {
-            position: fixed; top: 18px; right: 18px; z-index: 4000;
-            width: min(360px, 100vw - 36px); display: flex; flex-direction: column; gap: 10px;
-            pointer-events: none;
-        }
-        .toast {
-            display: flex; align-items: center; gap: 11px; padding: 13px 15px;
-            border-radius: 16px; background: var(--surface-strong);
-            border: 1px solid var(--surface-border); box-shadow: var(--shadow);
-            color: var(--text-primary); animation: toast-in .2s ease-out;
-        }
-        .toast-icon {
-            width: 25px; height: 25px; flex: none; border-radius: 50%;
-            background: var(--success); color: #fff; font-weight: 800;
-            display: grid; place-items: center;
-        }
-        .toast.error .toast-icon { background: var(--danger); }
-        @keyframes toast-in { from { opacity: 0; transform: translateY(-8px); } }
-
-        footer { margin-top: 26px; text-align: center; color: var(--text-muted); font-size: 12.5px; }
-        footer code { color: var(--accent-blue); }
-
-        @media (max-width: 640px) {
-            .glass-panel, .card { border-radius: 24px; }
-            .page { padding-top: 20px; }
-        }
-        @media (prefers-reduced-motion: reduce) {
-            * { transition-duration: .01ms !important; animation-duration: .01ms !important; }
-        }
-    </style>
-</head>
-<body>
-    <div class="page">
-        <header class="topbar">
-            <div class="brand">
-                <div class="logo">SB</div>
-                <div>
-                    <h1>sing-box 配置生成器</h1>
-                    <p>订阅 → config.json</p>
-                </div>
-            </div>
-            <div class="topbar-actions">
-                <a class="pill-button" href="https://github.com/canghowl5420/sing-box-subscribe" target="_blank" rel="noopener noreferrer">GitHub</a>
-                <button class="pill-button icon" id="theme-toggle" type="button" title="切换主题" aria-label="切换主题">🌙</button>
-            </div>
-        </header>
-
+{% block content %}
         <section class="glass-panel card">
             <div class="card-head">
                 <h2>全局设置</h2>
@@ -273,11 +45,6 @@
             </div>
         </section>
 
-        <footer>
-            表单会生成 <code>POST /config</code> 的请求 JSON；「生成订阅 JSON」下载该 JSON，「生成 config.json」调用接口并下载完整配置。
-        </footer>
-    </div>
-
     <datalist id="ua-options">
         <option value="clash.meta"></option>
         <option value="clashmeta"></option>
@@ -299,43 +66,13 @@
         <option value="Quantumult X"></option>
         <option value="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Safari/605.1.15"></option>
     </datalist>
+{% endblock %}
 
-    <div class="toast-region" id="toasts"></div>
-
+{% block scripts %}
     <script>
-        const root = document.documentElement;
-        const themeToggle = document.getElementById('theme-toggle');
         const subList = document.getElementById('sub-list');
-        const toasts = document.getElementById('toasts');
         const btnConfig = document.getElementById('btn-config');
-        let seq = 0;
 
-        // ---- 主题 ----
-        const savedTheme = localStorage.getItem('sbs-theme');
-        if (savedTheme === 'dark' || (!savedTheme && matchMedia('(prefers-color-scheme: dark)').matches)) {
-            root.classList.add('dark');
-        }
-        function syncThemeIcon() {
-            themeToggle.textContent = root.classList.contains('dark') ? '☀️' : '🌙';
-        }
-        themeToggle.addEventListener('click', () => {
-            root.classList.toggle('dark');
-            localStorage.setItem('sbs-theme', root.classList.contains('dark') ? 'dark' : 'light');
-            syncThemeIcon();
-        });
-        syncThemeIcon();
-
-        // ---- Toast ----
-        function toast(message, type = 'ok') {
-            const el = document.createElement('div');
-            el.className = 'toast' + (type === 'error' ? ' error' : '');
-            el.innerHTML = '<span class="toast-icon">' + (type === 'error' ? '!' : '✓') + '</span><span></span>';
-            el.lastElementChild.textContent = message;
-            toasts.appendChild(el);
-            setTimeout(() => el.remove(), 3200);
-        }
-
-        // ---- 订阅行 ----
         function esc(value) {
             return String(value).replace(/[&<>"']/g, (c) => ({
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -396,16 +133,17 @@
             subList.querySelectorAll('.sub-row').forEach((row) => {
                 const url = row.querySelector('.f-url').value.trim();
                 if (!url) return;
+                // tag 留空时按“在当前列表中的位置”补 tag_N（与后端逻辑一致）
+                const tag = row.querySelector('.f-tag').value.trim() || ('tag_' + (subscribes.length + 1));
                 const [emojiValue, sepMode] = row.querySelector('.f-emoji').value.split(':');
                 const item = {
                     url,
+                    tag,
                     emoji: Number(emojiValue),
                     'emoji-separator': sepMode === 'none' ? '' : ' ',
                 };
-                const tag = row.querySelector('.f-tag').value.trim();
                 const prefix = row.querySelector('.f-prefix').value;  // 保留首尾空格
                 const ua = row.querySelector('.f-ua').value.trim();
-                if (tag) item.tag = tag;
                 if (prefix) item.prefix = prefix;
                 if (ua) item['User-Agent'] = ua;
                 subscribes.push(item);
@@ -432,11 +170,9 @@
             btnConfig.lastChild.textContent = loading ? ' 生成中…' : ' 生成 config.json';
         }
 
-        // ---- 添加 / 初始行 ----
         document.getElementById('btn-add').addEventListener('click', () => addRow());
         addRow();
 
-        // ---- 生成订阅 JSON ----
         document.getElementById('btn-json').addEventListener('click', () => {
             const payload = collect();
             if (!payload.subscribes.length) { toast('请至少填写一条订阅 URL', 'error'); return; }
@@ -444,7 +180,6 @@
             toast('已生成 providers.json');
         });
 
-        // ---- 生成 config.json ----
         btnConfig.addEventListener('click', async () => {
             const payload = collect();
             if (!payload.subscribes.length) { toast('请至少填写一条订阅 URL', 'error'); return; }
@@ -470,5 +205,4 @@
             }
         });
     </script>
-</body>
-</html>
+{% endblock %}

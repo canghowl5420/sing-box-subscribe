@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}运行日志 · sing-box 配置生成器{% endblock %}
+{% block footer %}日志为进程内最近 200 条记录，重启后清空；数据来自 <code>GET /api/logs</code>。{% endblock %}
+
+{% block content %}
+        <section class="glass-panel card">
+            <div class="card-head">
+                <h2>运行日志</h2>
+                <span class="hint" id="log-status">加载中…</span>
+            </div>
+            <div class="toolbar" style="margin-bottom:14px;">
+                <button class="chip" id="btn-refresh" type="button">刷新</button>
+                <label class="chip" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
+                    <input type="checkbox" id="auto-refresh" checked> 自动刷新（3s）
+                </label>
+            </div>
+            <div class="log-list" id="log-list"></div>
+        </section>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        const logList = document.getElementById('log-list');
+        const logStatus = document.getElementById('log-status');
+        const autoRefresh = document.getElementById('auto-refresh');
+
+        function renderLogs(items) {
+            logList.innerHTML = '';
+            if (!items.length) {
+                const empty = document.createElement('div');
+                empty.className = 'log-empty';
+                empty.textContent = '暂无日志';
+                logList.appendChild(empty);
+                logStatus.textContent = '0 条';
+                return;
+            }
+            // 最新的在上面
+            items.slice().reverse().forEach((item) => {
+                const row = document.createElement('div');
+                row.className = 'log-item';
+
+                const time = document.createElement('div');
+                time.className = 'log-time';
+                time.textContent = item.time || '';
+
+                const level = document.createElement('div');
+                level.className = 'log-level ' + (item.level || 'info');
+                level.textContent = item.level || 'info';
+
+                const msg = document.createElement('div');
+                msg.className = 'log-msg';
+                msg.textContent = item.message || '';
+                const metas = [];
+                if (item.template !== undefined) metas.push('模板: ' + item.template);
+                if (item.subs !== undefined) metas.push('订阅: ' + item.subs);
+                if (item.size !== undefined) metas.push('大小: ' + item.size + ' B');
+                if (item.duration !== undefined) metas.push('耗时: ' + item.duration + 's');
+                if (metas.length) {
+                    const meta = document.createElement('div');
+                    meta.className = 'log-meta';
+                    meta.textContent = metas.join(' · ');
+                    msg.appendChild(meta);
+                }
+
+                row.appendChild(time);
+                row.appendChild(level);
+                row.appendChild(msg);
+                logList.appendChild(row);
+            });
+            logStatus.textContent = items.length + ' 条';
+        }
+
+        async function loadLogs() {
+            try {
+                const response = await fetch('/api/logs');
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                const data = await response.json();
+                renderLogs(data.logs || []);
+            } catch (err) {
+                logStatus.textContent = '加载失败';
+                const empty = document.createElement('div');
+                empty.className = 'log-empty';
+                empty.textContent = '加载日志失败：' + err.message;
+                logList.innerHTML = '';
+                logList.appendChild(empty);
+            }
+        }
+
+        document.getElementById('btn-refresh').addEventListener('click', loadLogs);
+        autoRefresh.addEventListener('change', () => { if (autoRefresh.checked) loadLogs(); });
+
+        loadLogs();
+        setInterval(() => { if (autoRefresh.checked) loadLogs(); }, 3000);
+    </script>
+{% endblock %}

@@ -34,6 +34,34 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertIn("POST /config", resp.get_data(as_text=True))
 
+    def test_readme_page(self):
+        resp = self.client.get("/readme")
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("快速上手", resp.get_data(as_text=True))
+
+    def test_logs_page(self):
+        resp = self.client.get("/logs")
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("运行日志", resp.get_data(as_text=True))
+
+    def test_api_logs(self):
+        resp = self.client.get("/api/logs")
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("logs", resp.get_json())
+
+    def test_successful_generate_is_logged(self):
+        payload = {"subscribes": [{"url": vmess_link("HK-1")}]}
+        resp = self.client.post("/config", json=payload)
+        self.assertEqual(resp.status_code, 200)
+        logs = self.client.get("/api/logs").get_json()["logs"]
+        self.assertTrue(any(l["level"] == "info" and l["message"] == "生成成功" for l in logs), logs)
+
+    def test_failed_generate_is_logged(self):
+        resp = self.client.post("/config", json={"subscribes": []})
+        self.assertEqual(resp.status_code, 400)
+        logs = self.client.get("/api/logs").get_json()["logs"]
+        self.assertTrue(any(l["level"] == "warn" for l in logs), logs)
+
     def test_post_config_ok(self):
         resp = self.client.post("/config", json={
             "subscribes": [{"url": vmess_link("HK-1"), "prefix": "A-"}],
