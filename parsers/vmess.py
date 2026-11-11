@@ -101,7 +101,9 @@ def parse(data):
                 'fingerprint': item['fp']
             }
     if item.get("net"):
-        if item['net'] in ['h2', 'http', 'tcp']:
+        # 只有 h2/http 才是 HTTP 传输；tcp 是普通 TCP，不应加 transport
+        # （net=tcp 且 type=http 是 TCP 头部混淆，保留原有的近似映射）
+        if item['net'] in ['h2', 'http'] or (item['net'] == 'tcp' and item.get('type') == 'http'):
             node['transport'] = {
                 'type':'http'
             }
