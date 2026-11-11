@@ -116,6 +116,10 @@
                             <option value="0:space">0 · 不加国旗</option>
                         </select>
                     </div>
+                    <div class="field col-resolver">
+                        <label>domain_resolver</label>
+                        <input type="text" class="f-resolver" placeholder="如 dns_xdm（可选）" value="${esc(defaults.resolver || '')}">
+                    </div>
                 </div>`;
             if (defaults.emoji === 0) row.querySelector('.f-emoji').value = '0:space';
             row.querySelector('.remove').addEventListener('click', () => {
@@ -150,6 +154,8 @@
                 const ua = row.querySelector('.f-ua').value.trim();
                 if (prefix) item.prefix = prefix;
                 if (ua) item['User-Agent'] = ua;
+                const resolver = row.querySelector('.f-resolver').value.trim();
+                if (resolver) item['domain-resolver'] = resolver;
                 subscribes.push(item);
             });
             return {

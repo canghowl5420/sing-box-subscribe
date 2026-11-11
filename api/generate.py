@@ -29,6 +29,7 @@ SUBSCRIBE_DEFAULTS = {
     "emoji": 1,
     "emoji-separator": " ",  # emoji 与节点名之间的分隔符，"" 表示无空格
     "name-clean": True,  # 是否清理节点名中的乱码/不可见字符
+    "domain-resolver": "",  # 给该订阅的每个节点加 domain_resolver
     "subgroup": "",
     "prefix": "",
     "ex-node-name": "",
@@ -46,6 +47,7 @@ PROVIDER_DEFAULTS = {
     "gh": 0,  # 非 providers.json 字段：github 加速序号(1 开始)，0 表示不用
     "emoji_separator": " ",  # 全局默认：订阅未指定 emoji-separator 时使用
     "name_clean": True,  # 全局默认：订阅未指定 name-clean 时使用
+    "domain_resolver": "",  # 全局默认：订阅未指定 domain-resolver 时使用
 }
 
 
@@ -96,6 +98,8 @@ def _normalize_subscribe(raw, index):
     merged = dict(raw)
     if "ua" in merged and "User-Agent" not in merged:  # ua 是 User-Agent 的别名
         merged["User-Agent"] = merged["ua"]
+    if "domain_resolver" in merged and "domain-resolver" not in merged:
+        merged["domain-resolver"] = merged["domain_resolver"]
     item.update({k: v for k, v in merged.items() if k in SUBSCRIBE_DEFAULTS})
     item["url"] = url
     item["tag"] = str(item["tag"]).strip() or f"tag_{index + 1}"
@@ -130,6 +134,8 @@ def normalize(payload):
             item["emoji-separator"] = str(providers.get("emoji_separator", " "))
         if "name-clean" not in raw:
             item["name-clean"] = bool(providers.get("name_clean", True))
+        if "domain-resolver" not in raw and "domain_resolver" not in raw:
+            item["domain-resolver"] = str(providers.get("domain_resolver", "") or "")
         if item["tag"] in seen:
             raise BadRequest(f"订阅 tag 重复：{item['tag']}")
         seen.add(item["tag"])

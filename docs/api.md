@@ -54,6 +54,7 @@
 | `emoji` | 0/1 | `1` | 是否按国别给节点名加国旗 emoji |
 | `emoji-separator` | string | `" "` | emoji 与节点名之间的分隔符；设 `""` 则无空格，如 `🇭🇰HK-1` |
 | `name-clean` | bool | `true` | 是否删除节点名中的乱码/不可见字符（见 §1.1）；`false` 保留原名 |
+| `domain-resolver` | string | `""` | 给该订阅的每个节点加上 `domain_resolver`（如 `dns_xdm`）；也可写 `domain_resolver` 别名 |
 | `subgroup` | string | `""` | 子分组名；非空时该订阅会单独生成一个 selector 分组 |
 | `prefix` | string | `""` | 节点名前缀；**保留空格**（如 `"A- "` 会产生 `A- 🇭🇰 HK-1`） |
 | `User-Agent` | string | `clash.meta` | 拉取订阅时使用的 UA（部分机场需要特定 UA，如 `clashmeta`） |
@@ -71,6 +72,7 @@
 | `gh` | int | `0` | GitHub 加速序号（从 1 开始），用于替换模板里 rule_set 的 GitHub 链接 |
 | `emoji_separator` | string | `" "` | 全局默认的 emoji 分隔符；订阅未写 `emoji-separator` 时生效 |
 | `name_clean` | bool | `true` | 全局默认的名称清理开关；订阅未写 `name-clean` 时生效 |
+| `domain_resolver` | string | `""` | 全局默认的 `domain_resolver`；订阅未写 `domain-resolver` 时生效 |
 | `subscribes`（缺省 `enabled`） | — | — | 未写 `enabled` 视为 true |
 
 > 约束：`subscribes` 数量上限默认 10（环境变量 `MAX_SUBS` 可调）；

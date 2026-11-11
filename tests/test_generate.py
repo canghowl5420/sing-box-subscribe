@@ -337,5 +337,41 @@ class StatusTests(unittest.TestCase):
         self.assertTrue(by_tag["bad"]["error"])
 
 
+class DomainResolverTests(unittest.TestCase):
+    def test_global_domain_resolver(self):
+        providers = generate.normalize({
+            "domain_resolver": "dns_xdm",
+            "subscribes": [{"url": vmess_link("HK-1"), "emoji": 0}],
+        })
+        cfg = json.loads(generate.run(providers))
+        node = next(o for o in cfg["outbounds"] if o.get("type") == "vmess")
+        self.assertEqual(node["domain_resolver"], "dns_xdm")
+
+    def test_per_subscribe_overrides_global(self):
+        providers = generate.normalize({
+            "domain_resolver": "global_dns",
+            "subscribes": [
+                {"url": vmess_link("HK-1"), "emoji": 0, "domain-resolver": "dns_a"},
+                {"url": vmess_link("US-1", "5.6.7.8"), "tag": "b", "emoji": 0},
+            ],
+        })
+        cfg = json.loads(generate.run(providers))
+        nodes = {o["tag"]: o for o in cfg["outbounds"] if o.get("type") == "vmess"}
+        self.assertEqual(nodes["HK-1"]["domain_resolver"], "dns_a")
+        self.assertEqual(nodes["US-1"]["domain_resolver"], "global_dns")
+
+    def test_alias_and_unset(self):
+        providers = generate.normalize({"subscribes": [
+            {"url": vmess_link("HK-1"), "emoji": 0, "domain_resolver": "dns_x"},
+            {"url": vmess_link("US-1", "5.6.7.8"), "tag": "b", "emoji": 0},
+        ]})
+        self.assertEqual(providers["subscribes"][0]["domain-resolver"], "dns_x")
+        self.assertEqual(providers["subscribes"][1]["domain-resolver"], "")
+        cfg = json.loads(generate.run(providers))
+        nodes = {o["tag"]: o for o in cfg["outbounds"] if o.get("type") == "vmess"}
+        self.assertEqual(nodes["HK-1"]["domain_resolver"], "dns_x")
+        self.assertNotIn("domain_resolver", nodes["US-1"])
+
+
 if __name__ == "__main__":
     unittest.main()
