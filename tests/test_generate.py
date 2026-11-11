@@ -320,5 +320,28 @@ class CleanNameTests(unittest.TestCase):
         self.assertFalse(providers["subscribes"][0]["name-clean"])
 
 
+class StatusTests(unittest.TestCase):
+    def test_run_returns_statuses(self):
+        providers = generate.normalize({"subscribes": [
+            {"url": vmess_link("HK-1"), "emoji": 0},
+            {"url": "/no/such/subscription.txt", "tag": "bad"},
+        ]})
+        content, statuses = generate.run(providers, with_status=True)
+        self.assertIn("outbounds", json.loads(content))
+        self.assertEqual(len(statuses), 2)
+        by_tag = {s["tag"]: s for s in statuses}
+        self.assertTrue(by_tag["tag_1"]["ok"])
+        self.assertEqual(by_tag["tag_1"]["nodes"], 1)
+        self.assertFalse(by_tag["bad"]["ok"])
+        self.assertTrue(by_tag["bad"]["error"])
+
+    def test_mask_url(self):
+        from main import mask_url
+        self.assertEqual(mask_url("https://a.com/sub?token=x"), "https://a.com/sub?***")
+        self.assertEqual(mask_url("https://a.com/sub"), "https://a.com/sub")
+        self.assertEqual(mask_url("vmess://abc"), "vmess://***")
+        self.assertEqual(mask_url("/data/x.txt"), "/data/x.txt")
+
+
 if __name__ == "__main__":
     unittest.main()

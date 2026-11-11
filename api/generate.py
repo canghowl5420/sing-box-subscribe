@@ -54,7 +54,11 @@ class BadRequest(ValueError):
 
 
 class GenerateError(RuntimeError):
-    """生成失败 → HTTP 502。"""
+    """生成失败 → HTTP 502。statuses 为每个订阅的抓取结果（可能为空）。"""
+
+    def __init__(self, message, statuses=None):
+        super().__init__(message)
+        self.statuses = statuses or []
 
 
 def _local_file_path(value):
@@ -160,8 +164,12 @@ def _resolve_template(providers):
     providers["config_template"] = path
 
 
-def run(providers):
-    """调用 main.py 生成配置，返回配置文本。每次使用独立临时目录，进程安全。"""
+def run(providers, with_status=False):
+    """调用 main.py 生成配置，返回配置文本。
+
+    with_status=True 时返回 (配置文本, 每个订阅的抓取状态列表)。
+    每次使用独立临时目录，进程安全。
+    """
     providers = json.loads(json.dumps(providers))  # 深拷贝，避免污染调用方
 
     workdir = tempfile.mkdtemp(prefix="sbs-")
@@ -178,13 +186,22 @@ def run(providers):
 
         input_path = os.path.join(workdir, "providers.json")
         output_path = os.path.join(workdir, "config.json")
+        status_path = os.path.join(workdir, "status.json")
         providers["save_config_path"] = output_path
         with open(input_path, "w", encoding="utf-8") as f:
             json.dump(providers, f, ensure_ascii=False)
 
+        def read_status():
+            try:
+                with open(status_path, encoding="utf-8") as f:
+                    return json.load(f).get("subscribes", [])
+            except (OSError, ValueError):
+                return []
+
         cmd = [
             sys.executable, MAIN_PY,
             "--temp_json_file", input_path,
+            "--status_file", status_path,
         ]
         gh = providers.get("gh")
         if gh:
@@ -199,13 +216,16 @@ def run(providers):
                 timeout=GENERATE_TIMEOUT,
             )
         except subprocess.TimeoutExpired:
-            raise GenerateError(f"生成超时（>{GENERATE_TIMEOUT}s）")
+            raise GenerateError(f"生成超时（>{GENERATE_TIMEOUT}s）", read_status())
 
         if proc.returncode != 0:
             detail = (proc.stderr or proc.stdout or "").strip()
-            raise GenerateError(detail[-2000:] or "main.py 执行失败")
+            raise GenerateError(detail[-2000:] or "main.py 执行失败", read_status())
 
         with open(output_path, encoding="utf-8") as f:
-            return f.read()
+            content = f.read()
+        if with_status:
+            return content, read_status()
+        return content
     finally:
         shutil.rmtree(workdir, ignore_errors=True)

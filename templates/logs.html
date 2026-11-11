@@ -51,6 +51,7 @@
                 msg.className = 'log-msg';
                 msg.textContent = item.message || '';
                 const metas = [];
+                if (item.url !== undefined) metas.push('链接: ' + item.url);
                 if (item.template !== undefined) metas.push('模板: ' + item.template);
                 if (item.subs !== undefined) metas.push('订阅: ' + item.subs);
                 if (item.size !== undefined) metas.push('大小: ' + item.size + ' B');

@@ -62,6 +62,18 @@ class ApiTests(unittest.TestCase):
         logs = self.client.get("/api/logs").get_json()["logs"]
         self.assertTrue(any(l["level"] == "warn" for l in logs), logs)
 
+    def test_per_subscription_status_is_logged(self):
+        payload = {"subscribes": [
+            {"url": vmess_link("HK-1"), "tag": "good"},
+            {"url": "/no/such/subscription.txt", "tag": "bad"},
+        ]}
+        resp = self.client.post("/config", json=payload)
+        self.assertEqual(resp.status_code, 200)
+        logs = self.client.get("/api/logs").get_json()["logs"]
+        messages = [l["message"] for l in logs]
+        self.assertTrue(any("订阅下载成功" in m for m in messages), messages)
+        self.assertTrue(any("订阅下载失败" in m for m in messages), messages)
+
     def test_post_config_ok(self):
         resp = self.client.post("/config", json={
             "subscribes": [{"url": vmess_link("HK-1"), "prefix": "A-"}],

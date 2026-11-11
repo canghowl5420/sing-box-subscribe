@@ -8,6 +8,24 @@ from gh_proxy_helper import set_gh_proxy
 
 parsers_mod = {}
 providers = None
+subscribe_reports = []
+
+
+def mask_url(url):
+    """日记用：隐去订阅链接里的 query/fragment 与分享链接凭据。"""
+    if not isinstance(url, str):
+        return str(url)
+    if url.startswith('file://'):
+        return url
+    if url.startswith(('http://', 'https://')):
+        base, sep, _ = url.partition('?')
+        base = base.split('#', 1)[0]
+        return base + ('?***' if sep else '')
+    if '://' in url:
+        return url.split('://', 1)[0] + '://***'
+    if url.startswith(('/', './', '../')):
+        return url
+    return '<inline %d chars>' % len(url)
 
 
 def init_parsers():
@@ -68,12 +86,25 @@ def load_template(providers):
 
 def process_subscribes(subscribes):
     nodes = {}
+    subscribe_reports.clear()
     for subscribe in subscribes:
         if 'enabled' in subscribe and not subscribe['enabled']:
             continue
         if 'sing-box-subscribe-doraemon.vercel.app' in subscribe['url']:
             continue
-        _nodes = get_nodes(subscribe['url'])
+        report = {
+            'url': mask_url(subscribe['url']),
+            'tag': subscribe.get('tag', ''),
+            'ok': False,
+            'nodes': 0,
+            'error': None,
+        }
+        tool.last_error = None
+        try:
+            _nodes = get_nodes(subscribe['url'])
+        except Exception as exc:
+            _nodes = []
+            report['error'] = type(exc).__name__ + ': ' + str(exc)
         if _nodes and len(_nodes) > 0:
             # 先清理节点名中的乱码/不可见字符，再套 emoji / prefix / 过滤
             clean_node_names(_nodes, subscribe)
@@ -86,9 +117,13 @@ def process_subscribes(subscribes):
             if not nodes.get(subscribe['tag']):
                 nodes[subscribe['tag']] = []
             nodes[subscribe['tag']] += _nodes
+            report['ok'] = True
+            report['nodes'] = len(_nodes)
         else:
             print('没有在此订阅下找到节点，跳过')
-            # print('Không tìm thấy proxy trong link thuê bao này, bỏ qua')
+            report['error'] = (report['error'] or tool.last_error
+                               or '未获取到节点（订阅为空或解析失败）')
+        subscribe_reports.append(report)
     tool.proDuplicateNodeName(nodes)
     return nodes
 
@@ -266,6 +301,7 @@ def get_parser(node):
 
 def get_content_from_url(url, n=10):
     UA = ''
+    tool.last_error = None
     print('处理: \033[31m' + url + '\033[0m')
     # print('Đang tải link đăng ký: \033[31m' + url + '\033[0m')
     prefixes = ["vmess://", "vless://", "ss://", "ssr://", "trojan://", "tuic://", "hysteria://", "hysteria2://",
@@ -290,19 +326,24 @@ def get_content_from_url(url, n=10):
         print('获取错误，跳过此订阅')
         # print('Lỗi khi tải link đăng ký, bỏ qua link đăng ký này')
         print('----------------------------')
-        pass
+        return ''
     try:
         response_content = response.content
         response_text = response_content.decode('utf-8-sig')  # utf-8-sig 可以忽略 BOM
         #response_encoding = response.encoding
     except:
+        tool.last_error = tool.last_error or '响应内容解码失败'
         return ''
     if response_text.isspace():
         print('没有从订阅链接获取到任何内容')
         # print('Không nhận được proxy nào từ link đăng ký')
-        return None
+        tool.last_error = '订阅内容为空'
+        return ''
     if not response_text:
         response = tool.getResponse(url, custom_user_agent='clashmeta')
+        if not response:
+            tool.last_error = tool.last_error or '订阅内容为空'
+            return ''
         response_text = response.text
     if any(response_text.startswith(prefix) for prefix in prefixes):
         response_text = tool.noblankLine(response_text)
@@ -568,6 +609,7 @@ if __name__ == '__main__':
     parser.add_argument('--temp_json_data', type=parse_json, help='临时内容(JSON 字符串)')
     parser.add_argument('--temp_json_file', type=str, help='临时内容(JSON 文件路径，优先于 --temp_json_data)')
     parser.add_argument('--gh_proxy_index', type=str, help='github加速链接序号')
+    parser.add_argument('--status_file', type=str, help='写出每个订阅的抓取状态(JSON)')
     args = parser.parse_args()
     gh_proxy_index = args.gh_proxy_index
     if args.temp_json_file:
@@ -578,6 +620,8 @@ if __name__ == '__main__':
         providers = load_json('providers.json')  # 加载本地 providers.json
     config = load_template(providers)
     nodes = process_subscribes(providers["subscribes"])
+    if args.status_file:
+        tool.saveFile(args.status_file, json.dumps({'subscribes': subscribe_reports}, ensure_ascii=False))
 
     # 处理github加速
     if hasattr(args, 'gh_proxy_index') and str(args.gh_proxy_index).isdigit():

@@ -40,6 +40,17 @@ def _template_names():
     return [os.path.splitext(f)[0] for f in files]
 
 
+def _log_subscribes(statuses):
+    """把每个订阅的抓取结果写进日志。"""
+    for item in statuses or []:
+        tag = item.get("tag") or "-"
+        url = item.get("url") or "-"
+        if item.get("ok"):
+            logstore.add("info", f"订阅下载成功：{tag}（{item.get('nodes', 0)} 个节点）", url=url)
+        else:
+            logstore.add("error", f"订阅下载失败：{tag}：{item.get('error') or '未知错误'}", url=url)
+
+
 @app.get("/")
 def index():
     """调试页面：填写表单，生成请求 JSON 或完整的 config.json。"""
@@ -74,16 +85,19 @@ def config():
     raw_template = payload.get("config_template") if isinstance(payload, dict) else None
     try:
         providers = generate.normalize(payload)
-        content = generate.run(providers)
+        content, statuses = generate.run(providers, with_status=True)
     except generate.BadRequest as exc:
         logstore.add("warn", f"参数错误：{exc}")
         return jsonify(status="error", message=str(exc)), 400
     except generate.GenerateError as exc:
+        _log_subscribes(getattr(exc, "statuses", []))
         logstore.add("error", f"生成失败：{exc}")
         return jsonify(status="error", message=str(exc)), 502
     except Exception as exc:  # noqa: BLE001
         logstore.add("error", f"生成失败：{exc}")
         return jsonify(status="error", message=f"生成失败：{exc}"), 500
+
+    _log_subscribes(statuses)
 
     template_desc = "inline" if isinstance(raw_template, dict) else (raw_template or "default")
     logstore.add(
