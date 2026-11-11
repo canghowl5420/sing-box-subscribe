@@ -290,7 +290,8 @@ class CleanNameTests(unittest.TestCase):
         self.assertEqual(clean_name("香港\u202e01"), "香港01")      # 双向覆盖
         self.assertEqual(clean_name("香\u00ad港01"), "香港01")      # 软连字符
         # 不应删除的
-        self.assertEqual(clean_name("香港?01"), "香港?01")          # 普通问号
+        self.assertEqual(clean_name("香港??01"), "香港01")          # 字面问号
+        self.assertEqual(clean_name("香港？？01"), "香港01")          # 全角问号
         self.assertEqual(clean_name("👨\u200d👩"), "👨\u200d👩")     # ZWJ emoji
         self.assertEqual(clean_name("香港⭐01"), "香港⭐01")
 

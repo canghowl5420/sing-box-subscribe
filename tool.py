@@ -170,6 +170,8 @@ def rename(input_str, separator=' '):
 JUNK_NAME_RE = re.compile(
     '['
     '\uFFFD'            # 替换字符（编码丢失）
+    '?'                 # 字面问号（编码丢失时常见）
+    '\uFF1F'            # 全角问号
     '\u0000-\u001F'    # C0 控制字符
     '\u007F-\u009F'    # DEL + C1 控制字符
     '\u00AD'            # 软连字符
