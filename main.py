@@ -11,23 +11,6 @@ providers = None
 subscribe_reports = []
 
 
-def mask_url(url):
-    """日记用：隐去订阅链接里的 query/fragment 与分享链接凭据。"""
-    if not isinstance(url, str):
-        return str(url)
-    if url.startswith('file://'):
-        return url
-    if url.startswith(('http://', 'https://')):
-        base, sep, _ = url.partition('?')
-        base = base.split('#', 1)[0]
-        return base + ('?***' if sep else '')
-    if '://' in url:
-        return url.split('://', 1)[0] + '://***'
-    if url.startswith(('/', './', '../')):
-        return url
-    return '<inline %d chars>' % len(url)
-
-
 def init_parsers():
     b = os.walk('parsers')
     for path, dirs, files in b:
@@ -93,7 +76,7 @@ def process_subscribes(subscribes):
         if 'sing-box-subscribe-doraemon.vercel.app' in subscribe['url']:
             continue
         report = {
-            'url': mask_url(subscribe['url']),
+            'url': subscribe['url'],
             'tag': subscribe.get('tag', ''),
             'ok': False,
             'nodes': 0,

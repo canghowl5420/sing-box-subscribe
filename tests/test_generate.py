@@ -335,13 +335,6 @@ class StatusTests(unittest.TestCase):
         self.assertFalse(by_tag["bad"]["ok"])
         self.assertTrue(by_tag["bad"]["error"])
 
-    def test_mask_url(self):
-        from main import mask_url
-        self.assertEqual(mask_url("https://a.com/sub?token=x"), "https://a.com/sub?***")
-        self.assertEqual(mask_url("https://a.com/sub"), "https://a.com/sub")
-        self.assertEqual(mask_url("vmess://abc"), "vmess://***")
-        self.assertEqual(mask_url("/data/x.txt"), "/data/x.txt")
-
 
 if __name__ == "__main__":
     unittest.main()

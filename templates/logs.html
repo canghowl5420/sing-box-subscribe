@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}运行日志 · sing-box 配置生成器{% endblock %}
-{% block footer %}日志为进程内最近 200 条记录，重启后清空；数据来自 <code>GET /api/logs</code>。{% endblock %}
+{% block footer %}日志为进程内最近 200 条记录，重启后清空；数据来自 <code>GET /api/logs</code>。日志包含完整订阅链接（含 token），请勿公开此页面。{% endblock %}
 
 {% block content %}
         <section class="glass-panel card">
