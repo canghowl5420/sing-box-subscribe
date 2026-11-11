@@ -116,9 +116,9 @@
                             <option value="0:space">0 · 不加国旗</option>
                         </select>
                     </div>
-                    <div class="field col-resolver">
-                        <label>domain_resolver</label>
-                        <input type="text" class="f-resolver" placeholder="如 dns_xdm（可选）" value="${esc(defaults.resolver || '')}">
+                    <div class="field col-extra">
+                        <label>额外字段（JSON，可选）</label>
+                        <input type="text" class="f-extra" placeholder='{"domain_resolver":"dns_xdm"}' value="${esc(defaults.extra || '')}">
                     </div>
                 </div>`;
             if (defaults.emoji === 0) row.querySelector('.f-emoji').value = '0:space';
@@ -154,8 +154,19 @@
                 const ua = row.querySelector('.f-ua').value.trim();
                 if (prefix) item.prefix = prefix;
                 if (ua) item['User-Agent'] = ua;
-                const resolver = row.querySelector('.f-resolver').value.trim();
-                if (resolver) item['domain-resolver'] = resolver;
+                const extraText = row.querySelector('.f-extra').value.trim();
+                if (extraText) {
+                    let extra;
+                    try {
+                        extra = JSON.parse(extraText);
+                    } catch (err) {
+                        throw new Error('额外字段不是合法 JSON：' + err.message);
+                    }
+                    if (!extra || typeof extra !== 'object' || Array.isArray(extra)) {
+                        throw new Error('额外字段必须是 JSON 对象，如 {"domain_resolver":"dns_xdm"}');
+                    }
+                    item.extra = extra;
+                }
                 subscribes.push(item);
             });
             return {
@@ -185,14 +196,16 @@
         addRow();
 
         document.getElementById('btn-json').addEventListener('click', () => {
-            const payload = collect();
+            let payload;
+            try { payload = collect(); } catch (err) { toast(err.message, 'error'); return; }
             if (!payload.subscribes.length) { toast('请至少填写一条订阅 URL', 'error'); return; }
             download('providers.json', JSON.stringify(payload, null, 2));
             toast('已生成 providers.json');
         });
 
         btnConfig.addEventListener('click', async () => {
-            const payload = collect();
+            let payload;
+            try { payload = collect(); } catch (err) { toast(err.message, 'error'); return; }
             if (!payload.subscribes.length) { toast('请至少填写一条订阅 URL', 'error'); return; }
             setLoading(true);
             try {

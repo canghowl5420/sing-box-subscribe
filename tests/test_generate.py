@@ -337,40 +337,39 @@ class StatusTests(unittest.TestCase):
         self.assertTrue(by_tag["bad"]["error"])
 
 
-class DomainResolverTests(unittest.TestCase):
-    def test_global_domain_resolver(self):
-        providers = generate.normalize({
-            "domain_resolver": "dns_xdm",
-            "subscribes": [{"url": vmess_link("HK-1"), "emoji": 0}],
-        })
-        cfg = json.loads(generate.run(providers))
-        node = next(o for o in cfg["outbounds"] if o.get("type") == "vmess")
-        self.assertEqual(node["domain_resolver"], "dns_xdm")
-
-    def test_per_subscribe_overrides_global(self):
-        providers = generate.normalize({
-            "domain_resolver": "global_dns",
-            "subscribes": [
-                {"url": vmess_link("HK-1"), "emoji": 0, "domain-resolver": "dns_a"},
-                {"url": vmess_link("US-1", "5.6.7.8"), "tag": "b", "emoji": 0},
-            ],
-        })
-        cfg = json.loads(generate.run(providers))
-        nodes = {o["tag"]: o for o in cfg["outbounds"] if o.get("type") == "vmess"}
-        self.assertEqual(nodes["HK-1"]["domain_resolver"], "dns_a")
-        self.assertEqual(nodes["US-1"]["domain_resolver"], "global_dns")
-
-    def test_alias_and_unset(self):
+class ExtraFieldsTests(unittest.TestCase):
+    def test_extra_applied_to_every_node(self):
         providers = generate.normalize({"subscribes": [
-            {"url": vmess_link("HK-1"), "emoji": 0, "domain_resolver": "dns_x"},
+            {"url": vmess_link("HK-1"), "emoji": 0,
+             "extra": {"domain_resolver": "dns_xdm"}},
             {"url": vmess_link("US-1", "5.6.7.8"), "tag": "b", "emoji": 0},
         ]})
-        self.assertEqual(providers["subscribes"][0]["domain-resolver"], "dns_x")
-        self.assertEqual(providers["subscribes"][1]["domain-resolver"], "")
         cfg = json.loads(generate.run(providers))
         nodes = {o["tag"]: o for o in cfg["outbounds"] if o.get("type") == "vmess"}
-        self.assertEqual(nodes["HK-1"]["domain_resolver"], "dns_x")
+        self.assertEqual(nodes["HK-1"]["domain_resolver"], "dns_xdm")
         self.assertNotIn("domain_resolver", nodes["US-1"])
+
+    def test_extra_json_string_alias(self):
+        providers = generate.normalize({"subscribes": [
+            {"url": vmess_link("HK-1"), "emoji": 0,
+             "extra-json": '{"domain_resolver":"dns_x","tcp_fast_open":true}'},
+        ]})
+        cfg = json.loads(generate.run(providers))
+        node = next(o for o in cfg["outbounds"] if o.get("type") == "vmess")
+        self.assertEqual(node["domain_resolver"], "dns_x")
+        self.assertTrue(node["tcp_fast_open"])
+
+    def test_extra_must_be_object(self):
+        with self.assertRaises(generate.BadRequest):
+            generate.normalize({"subscribes": [
+                {"url": "https://a/sub", "extra": ["not", "object"]},
+            ]})
+
+    def test_extra_json_invalid(self):
+        with self.assertRaises(generate.BadRequest):
+            generate.normalize({"subscribes": [
+                {"url": "https://a/sub", "extra-json": "{bad json"},
+            ]})
 
 
 if __name__ == "__main__":

@@ -91,7 +91,7 @@ def process_subscribes(subscribes):
         if _nodes and len(_nodes) > 0:
             # 先清理节点名中的乱码/不可见字符，再套 emoji / prefix / 过滤
             clean_node_names(_nodes, subscribe)
-            add_domain_resolver(_nodes, subscribe)
+            add_extra_fields(_nodes, subscribe)
             # 先加国旗 emoji，再加 prefix，保证最终顺序为 prefix + emoji + 节点名
             add_emoji(_nodes, subscribe)
             add_prefix(_nodes, subscribe)
@@ -174,15 +174,13 @@ def clean_node_names(nodes, subscribe):
         node['tag'] = tool.clean_name(node.get('tag', '')) or tool.genName()
 
 
-def add_domain_resolver(nodes, subscribe):
-    """给该订阅的每个节点加上 domain_resolver（如 dns_xdm）。"""
-    resolver = subscribe.get('domain-resolver')
-    if resolver is None:
-        resolver = (providers or {}).get('domain_resolver')
-    if not resolver:
+def add_extra_fields(nodes, subscribe):
+    """把订阅级的额外字段（JSON 对象）合并进该订阅的每个节点。"""
+    extra = subscribe.get('extra')
+    if not isinstance(extra, dict) or not extra:
         return
     for node in nodes:
-        node['domain_resolver'] = resolver
+        node.update(extra)
 
 
 def add_emoji(nodes, subscribe):
