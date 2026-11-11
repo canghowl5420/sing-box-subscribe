@@ -28,6 +28,7 @@ SUBSCRIBE_DEFAULTS = {
     "enabled": True,
     "emoji": 1,
     "emoji-separator": " ",  # emoji 与节点名之间的分隔符，"" 表示无空格
+    "name-clean": True,  # 是否清理节点名中的乱码/不可见字符
     "subgroup": "",
     "prefix": "",
     "ex-node-name": "",
@@ -44,6 +45,7 @@ PROVIDER_DEFAULTS = {
     "Only-nodes": False,
     "gh": 0,  # 非 providers.json 字段：github 加速序号(1 开始)，0 表示不用
     "emoji_separator": " ",  # 全局默认：订阅未指定 emoji-separator 时使用
+    "name_clean": True,  # 全局默认：订阅未指定 name-clean 时使用
 }
 
 
@@ -122,6 +124,8 @@ def normalize(payload):
         # 订阅未显式指定 emoji-separator 时，使用全局默认 emoji_separator
         if "emoji-separator" not in raw:
             item["emoji-separator"] = str(providers.get("emoji_separator", " "))
+        if "name-clean" not in raw:
+            item["name-clean"] = bool(providers.get("name_clean", True))
         if item["tag"] in seen:
             raise BadRequest(f"订阅 tag 重复：{item['tag']}")
         seen.add(item["tag"])

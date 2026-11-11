@@ -279,5 +279,46 @@ class RunIntegrationTests(unittest.TestCase):
         self.assertTrue(any("HK-1" in n.get("tag", "") for n in nodes))
 
 
+class CleanNameTests(unittest.TestCase):
+    def test_clean_name_chars(self):
+        from tool import clean_name
+        self.assertEqual(clean_name("香港\u200b01"), "香港01")      # 零宽空格
+        self.assertEqual(clean_name("香港\ufffd01"), "香港01")      # 替换字符
+        self.assertEqual(clean_name("香\x00港\x1f01"), "香港01")    # C0 控制
+        self.assertEqual(clean_name("香港\x7f\x8501"), "香港01")    # DEL/C1
+        self.assertEqual(clean_name("香港\ufeff01"), "香港01")      # BOM
+        self.assertEqual(clean_name("香港\u202e01"), "香港01")      # 双向覆盖
+        self.assertEqual(clean_name("香\u00ad港01"), "香港01")      # 软连字符
+        # 不应删除的
+        self.assertEqual(clean_name("香港?01"), "香港?01")          # 普通问号
+        self.assertEqual(clean_name("👨\u200d👩"), "👨\u200d👩")     # ZWJ emoji
+        self.assertEqual(clean_name("香港⭐01"), "香港⭐01")
+
+    def test_default_cleans_node_name(self):
+        providers = generate.normalize({"subscribes": [
+            {"url": vmess_link("HK\u200b01\ufffd"), "emoji": 0},
+        ]})
+        cfg = json.loads(generate.run(providers))
+        tags = [o.get("tag", "") for o in cfg["outbounds"]]
+        self.assertIn("HK01", tags)
+        self.assertFalse(any("\u200b" in t or "\ufffd" in t for t in tags), tags)
+
+    def test_can_disable_clean(self):
+        providers = generate.normalize({"subscribes": [
+            {"url": vmess_link("HK\u200b01"), "emoji": 0, "name-clean": False},
+        ]})
+        self.assertFalse(providers["subscribes"][0]["name-clean"])
+        cfg = json.loads(generate.run(providers))
+        tags = [o.get("tag", "") for o in cfg["outbounds"]]
+        self.assertTrue(any("\u200b" in t for t in tags), tags)
+
+    def test_global_name_clean_fallback(self):
+        providers = generate.normalize({
+            "name_clean": False,
+            "subscribes": [{"url": "https://a/sub"}],
+        })
+        self.assertFalse(providers["subscribes"][0]["name-clean"])
+
+
 if __name__ == "__main__":
     unittest.main()

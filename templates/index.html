@@ -35,6 +35,10 @@
             <div class="sub-list" id="sub-list"></div>
             <div class="toolbar" style="margin-top:14px;">
                 <button class="chip" id="btn-add" type="button">+ 添加订阅</button>
+                <label class="chip" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;"
+                       title="删除 U+FFFD、控制字符、零宽/不可见字符（不影响普通符号和 emoji）">
+                    <input type="checkbox" id="name-clean" checked> 清理节点名乱码
+                </label>
             </div>
 
             <div class="actions">
@@ -152,6 +156,7 @@
                 subscribes,
                 config_template: document.getElementById('tpl-custom').value.trim() || document.getElementById('tpl').value,
                 exclude_protocol: document.getElementById('eps').value.trim(),
+                name_clean: document.getElementById('name-clean').checked,
             };
         }
 

@@ -165,6 +165,34 @@ def rename(input_str, separator=' '):
                 return country_code + separator + input_str
     return input_str
 
+# 节点名清理：U+FFFD、控制字符、零宽/不可见格式字符。
+# 注意：不包含 U+200C/U+200D（ZWNJ/ZWJ），它们是组合 emoji 和部分文字的必要字符。
+JUNK_NAME_RE = re.compile(
+    '['
+    '\uFFFD'            # 替换字符（编码丢失）
+    '\u0000-\u001F'    # C0 控制字符
+    '\u007F-\u009F'    # DEL + C1 控制字符
+    '\u00AD'            # 软连字符
+    '\u034F'            # 组合字形连接符
+    '\u061C'            # 阿拉伯字母标记
+    '\u180E'            # 蒙古文元音分隔符
+    '\u200B'            # 零宽空格
+    '\u200E\u200F'      # LRM / RLM
+    '\u202A-\u202E'    # 双向嵌入/覆盖
+    '\u2060'            # 词连接符
+    '\u2061-\u2064'    # 不可见运算符
+    '\u2066-\u2069'    # 双向隔离
+    '\uFEFF'            # BOM / 零宽不换行空格
+    '\u3164'            # 韩文填充符
+    '\uFFA0'            # 半角韩文填充符
+    ']'
+)
+
+
+def clean_name(name):
+    """删除节点名中的乱码/不可见字符，并去掉首尾空白。"""
+    return JUNK_NAME_RE.sub('', name or '').strip()
+
 def b64Decode(str):
     str = urllib.parse.unquote(str.strip())
     str += (len(str)%4)*'='

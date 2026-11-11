@@ -75,6 +75,8 @@ def process_subscribes(subscribes):
             continue
         _nodes = get_nodes(subscribe['url'])
         if _nodes and len(_nodes) > 0:
+            # 先清理节点名中的乱码/不可见字符，再套 emoji / prefix / 过滤
+            clean_node_names(_nodes, subscribe)
             # 先加国旗 emoji，再加 prefix，保证最终顺序为 prefix + emoji + 节点名
             add_emoji(_nodes, subscribe)
             add_prefix(_nodes, subscribe)
@@ -140,6 +142,17 @@ def add_prefix(nodes, subscribe):
             node['tag'] = subscribe['prefix'] + node['tag']
             if node.get('detour'):
                 node['detour'] = subscribe['prefix'] + node['detour']
+
+
+def clean_node_names(nodes, subscribe):
+    """清理节点名中的乱码/不可见字符（U+FFFD、控制字符、零宽字符）。"""
+    enabled = subscribe.get('name-clean')
+    if enabled is None:
+        enabled = (providers or {}).get('name_clean', True)
+    if not enabled:
+        return
+    for node in nodes:
+        node['tag'] = tool.clean_name(node.get('tag', '')) or tool.genName()
 
 
 def add_emoji(nodes, subscribe):
